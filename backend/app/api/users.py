@@ -87,3 +87,17 @@ async def update_user(
         setattr(user, k, v)
     await db.flush()
     return success_response(UserOut.model_validate(user).model_dump(), "用户更新成功")
+
+
+@router.delete("/{user_id}")
+async def delete_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    user = await db.get(User, user_id)
+    if not user:
+        return error_response(404, "用户不存在")
+    await db.delete(user)
+    await db.flush()
+    return success_response(None, "用户已删除")

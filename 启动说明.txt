@@ -1,0 +1,27 @@
+ 在线版
+
+  ▎ http://8.154.22.214/qingtian/
+  ▎ 账号: admin / wqt158205
+
+
+
+
+
+
+
+
+
+ D:\WorkBuddy Project\2026-07-21-00-14-47 │ 🚀 已上云主项目 │ Python FastAPI + Vue 3       │
+  ├──────────────────────────────────────────┼─────────────────┼──────────────────────────────┤
+  │ D:\WorkBuddy Project\COBY                │ 💻 本地可运行版 │ Python FastAPI + Vue 3       │
+  ├──────────────────────────────────────────┼─────────────────┼──────────────────────────────┤
+  │ D:\WorkBuddy Project\JAVA COBY           │ ☕ Java 后端版  │ Spring Boot 3 + MyBatis-Plus │
+
+
+
+
+
+
+
+
+
