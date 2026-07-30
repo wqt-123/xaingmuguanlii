@@ -3,14 +3,19 @@
     style="background: linear-gradient(180deg, rgba(17,24,39,0.95) 0%, rgba(10,14,23,0.98) 100%)">
     <div class="p-5 border-b border-cockpit-border/20">
       <h1 class="text-xl font-bold text-glow tracking-wider">深入云境-Nick</h1>
-      <p class="text-xs text-cockpit-muted mt-1">项目管理作战驾驶舱</p>
+      <p class="text-xs text-cockpit-muted mt-1">作战驾驶舱</p>
     </div>
     <nav class="flex-1 p-3 space-y-1 overflow-auto">
       <router-link v-for="item in navItems" :key="item.to" :to="item.to"
-        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-300 hover:bg-white/5"
-        :class="$route.path.startsWith(item.to) && item.to !== '/' ? 'bg-white/10 text-cockpit-gold neon-border' : 'text-cockpit-muted'">
-        <span class="text-lg">{{ item.icon }}</span>
-        <span>{{ item.label }}</span>
+        class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-300 relative overflow-hidden"
+        :class="$route.path.startsWith(item.to) && item.to !== '/' ? 'nav-active' : 'text-cockpit-muted'">
+        <!-- Hover/Active background layer -->
+        <div class="absolute inset-0 nav-bg" />
+        <span class="relative z-10 text-lg">{{ item.icon }}</span>
+        <span class="relative z-10">{{ item.label }}</span>
+        <!-- Active indicator bar -->
+        <div v-if="$route.path.startsWith(item.to) && item.to !== '/'"
+          class="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)] nav-indicator" />
       </router-link>
     </nav>
     <div class="p-4 border-t border-cockpit-border/20">
@@ -40,7 +45,7 @@ const auth = useAuthStore()
 
 const navItems = [
   { to: '/dashboard', icon: '◉', label: '仪表盘' },
-  { to: '/plans', icon: '⊞', label: '计划管理' },
+  { to: '/projects', icon: '📁', label: '项目管理' },
   { to: '/gantt', icon: '≣', label: '甘特图' },
   { to: '/requirements', icon: '☰', label: '需求管理' },
   { to: '/defects', icon: '⚠', label: '缺陷管理' },
@@ -59,3 +64,41 @@ function logout() {
   router.push('/login')
 }
 </script>
+
+<style scoped>
+.nav-item {
+  position: relative;
+}
+.nav-item .nav-bg {
+  background: transparent;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  transform: scale(0.9);
+  opacity: 0;
+}
+.nav-item:hover .nav-bg {
+  background: rgba(255,255,255,0.06);
+  transform: scale(1);
+  opacity: 1;
+}
+.nav-item:hover {
+  transform: scale(1.03);
+}
+.nav-active {
+  background: linear-gradient(135deg, rgba(59,130,246,0.2) 0%, rgba(96,165,250,0.12) 100%) !important;
+  color: #60A5FA !important;
+  font-weight: 600;
+  transform: scale(1.04);
+  border: 1px solid rgba(96,165,250,0.35);
+  box-shadow: 0 0 16px rgba(59,130,246,0.15), inset 0 0 8px rgba(59,130,246,0.06);
+}
+.nav-active:hover {
+  transform: scale(1.06);
+}
+.nav-indicator {
+  animation: indicatorIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes indicatorIn {
+  from { transform: scaleY(0); opacity: 0; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+</style>

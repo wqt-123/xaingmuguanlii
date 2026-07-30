@@ -131,10 +131,10 @@ const animatedValues = ref([0,0,0,0,0,0])
 let animTimer = 0
 
 const kpiCards = ref([
-  { label: '项目总数', suffix: '', link: '/plans', alert: false, sub: '' },
-  { label: '进行中', suffix: '', link: '/plans', alert: false, sub: '' },
+  { label: '项目总数', suffix: '', link: '/projects', alert: false, sub: '' },
+  { label: '进行中', suffix: '', link: '/projects', alert: false, sub: '' },
   { label: '完成率', suffix: '%', link: '/dashboard', alert: false, sub: '' },
-  { label: '延期任务', suffix: '', link: '/plans', alert: true, sub: '' },
+  { label: '延期任务', suffix: '', link: '/projects', alert: true, sub: '' },
   { label: '待评审', suffix: '', link: '/requirements', alert: false, sub: '' },
   { label: '未关闭缺陷', suffix: '', link: '/defects', alert: true, sub: '' },
 ])

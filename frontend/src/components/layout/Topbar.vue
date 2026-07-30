@@ -25,9 +25,9 @@ const unreadCount = ref(0)
 onMounted(async()=>{try{const r:any=await api.get('/messages/unread-count');unreadCount.value=r.data?.count||0}catch{}})
 
 const pageNames: Record<string, string> = {
-  dashboard: '仪表盘', plans: '计划管理', gantt: '甘特图',
+  dashboard: '仪表盘', projects: '项目管理', plans: '项目管理', gantt: '甘特图',
   requirements: '需求管理', defects: '缺陷管理',
-  team: '团队管理', inbox: '消息中心',
+  mytasks: '我的任务', team: '团队管理', inbox: '消息中心', settings: '个人设置',
 }
 
 const currentPage = computed(() => {

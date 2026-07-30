@@ -1,7 +1,7 @@
 """Tasks API routes."""
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, update
+from sqlalchemy import select, func, update, or_
 from app.database import get_db
 from app.models.user import User
 from app.models.task import Task
@@ -155,3 +155,38 @@ async def get_gantt_data(plan_id: int, db: AsyncSession = Depends(get_db), curre
         "dependencies": [{"id": d.id, "predecessor_id": d.predecessor_id, "successor_id": d.successor_id,
                            "dep_type": d.dep_type} for d in deps],
     })
+
+
+# Task dependency endpoints
+@router.post("/dependencies")
+async def create_dependency(
+    predecessor_id: int, successor_id: int, dep_type: str = "FS",
+    db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user),
+):
+    dep = TaskDependency(predecessor_id=predecessor_id, successor_id=successor_id, dep_type=dep_type)
+    db.add(dep)
+    await db.flush()
+    return success_response({"id": dep.id, "predecessor_id": dep.predecessor_id,
+                             "successor_id": dep.successor_id, "dep_type": dep.dep_type}, "依赖已创建")
+
+
+@router.delete("/dependencies/{dep_id}")
+async def delete_dependency(dep_id: int, db: AsyncSession = Depends(get_db),
+                            current_user: User = Depends(get_current_user)):
+    dep = await db.get(TaskDependency, dep_id)
+    if dep:
+        await db.delete(dep)
+        await db.flush()
+    return success_response(None, "依赖已删除")
+
+
+@router.get("/dependencies/{plan_id}")
+async def list_dependencies(plan_id: int, db: AsyncSession = Depends(get_db),
+                            current_user: User = Depends(get_current_user)):
+    tasks = (await db.execute(select(Task.id).where(Task.plan_id == plan_id))).scalars().all()
+    tids = list(tasks)
+    deps = (await db.execute(select(TaskDependency).where(
+        or_(TaskDependency.predecessor_id.in_(tids), TaskDependency.successor_id.in_(tids))
+    ))).scalars().all()
+    return success_response([{"id": d.id, "predecessor_id": d.predecessor_id,
+                              "successor_id": d.successor_id, "dep_type": d.dep_type} for d in deps])

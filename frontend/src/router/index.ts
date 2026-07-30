@@ -19,14 +19,16 @@ const router = createRouter({
           name: 'Dashboard',
           component: () => import('@/views/DashboardView.vue'),
         },
+        { path: 'plans', redirect: '/projects' },
+        { path: 'plans/:id', redirect: (to: any) => `/projects/${to.params.id}` },
         {
-          path: 'plans',
-          name: 'Plans',
+          path: 'projects',
+          name: 'Projects',
           component: () => import('@/views/PlanListView.vue'),
         },
         {
-          path: 'plans/:id',
-          name: 'PlanDetail',
+          path: 'projects/:id',
+          name: 'ProjectDetail',
           component: () => import('@/views/PlanDetailView.vue'),
         },
         {
