@@ -40,9 +40,19 @@ const router = createRouter({
           component: () => import('@/views/RequirementListView.vue'),
         },
         {
+          path: 'requirements/:id',
+          name: 'RequirementDetail',
+          component: () => import('@/views/RequirementDetailView.vue'),
+        },
+        {
           path: 'defects',
           name: 'Defects',
           component: () => import('@/views/DefectListView.vue'),
+        },
+        {
+          path: 'defects/:id',
+          name: 'DefectDetail',
+          component: () => import('@/views/DefectDetailView.vue'),
         },
         {
           path: 'team',

@@ -1,1 +1,9 @@
-<template><div class="space-y-6"><h2 class="text-2xl font-bold text-glow">消息中心</h2><div class="glass-panel p-5"><p class="text-cockpit-muted text-center py-8">暂无消息</p></div></div></template>
+<template><div class="space-y-6"><div class="flex justify-between items-center"><h2 class="text-2xl font-bold text-glow">消息中心</h2><button v-if="notifications.length" @click="markAllRead" class="text-xs px-3 py-1.5 bg-cockpit-gold/20 text-cockpit-gold rounded-lg hover:bg-cockpit-gold/30 transition-colors">全部已读</button></div><div v-if="notifications.length" class="space-y-1"><div v-for="n in notifications" :key="n.id" class="glass-panel p-3 flex items-center gap-3 cursor-pointer transition-all hover:border-cockpit-gold/40" :class="n.is_read ? 'opacity-60' : ''" @click="markRead(n)"><div class="w-2 h-2 rounded-full flex-shrink-0" :class="n.is_read ? 'bg-transparent' : 'bg-cockpit-accent animate-pulse'"/><div class="flex-1 min-w-0"><p class="text-sm font-medium truncate" :class="n.type==='danger'?'text-cockpit-accent':n.type==='warning'?'text-cockpit-gold':''">{{ n.title }}</p><p class="text-xs text-cockpit-muted mt-0.5">{{ n.content }}</p></div><span class="text-[10px] text-cockpit-muted flex-shrink-0">{{ formatTime(n.created_at) }}</span></div></div><p v-else class="text-cockpit-muted text-center py-12">暂无消息</p></div></template>
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'; import api from '@/api/client'
+const notifications = ref<any[]>([])
+onMounted(async()=>{try{const r:any=await api.get('/notifications');notifications.value=r.data?.items||[]}catch{}})
+async function markRead(n:any){if(!n.is_read){try{await api.put('/notifications/'+n.id+'/read');n.is_read=true}catch{}}}
+async function markAllRead(){try{await api.put('/notifications/read-all');notifications.value.forEach(n=>n.is_read=true)}catch{}}
+function formatTime(t:string){if(!t)return'';const d=new Date(t);return d.toLocaleDateString('zh-CN',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}
+</script>
