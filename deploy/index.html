@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas — 项目管理平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter','system-ui','sans-serif'], mono: ['JetBrains Mono','monospace'] },
+        colors: {
+          bg: { base:'#0B0C0E', sidebar:'#0E0F12', card:'#141518', hover:'#1C1D21', subtle:'#101112' },
+          border: { DEFAULT:'#222327', strong:'#2E2F35', subtle:'#1A1B1E' },
+          text: { primary:'#E8E8EC', secondary:'#A0A4AD', tertiary:'#6B7079', muted:'#4A4E55' },
+          accent: { DEFAULT:'#7C6FF0', purple:'#7C6FF0', blue:'#5B9BF2', cyan:'#3DCCC7', pink:'#F06292', amber:'#F5A623', green:'#4CB782' },
+          status: { success:'#4CB782', warning:'#F5A623', danger:'#EF4444', info:'#5B9BF2' }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  *{box-sizing:border-box}
+  html{font-size:15px}
+  body{background:#0B0C0E;color:#E8E8EC;font-family:'Inter',sans-serif;font-size:15px;margin:0;-webkit-font-smoothing:antialiased}
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:#2E2F35;border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:#3E3F45}
+  .gradient-text{background:linear-gradient(135deg,#7C6FF0,#F06292);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .nav-item{transition:all .15s;cursor:pointer;border-radius:6px}
+  .nav-item:hover{background:#1C1D21}
+  .nav-item.active{background:rgba(124,111,240,0.12);color:#E8E8EC}
+  .nav-item.active .nav-indicator{opacity:1}
+  .nav-indicator{position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:18px;background:#7C6FF0;border-radius:0 3px 3px 0;opacity:0;transition:opacity .15s}
+  .btn-primary{background:linear-gradient(180deg,#7C6FF0,#6B5EE0);color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s}
+  .btn-primary:hover{background:linear-gradient(180deg,#8C7FF0,#7B6EE0);transform:translateY(-1px)}
+  .btn-ghost{background:transparent;border:1px solid #2E2F35;color:#A0A4AD;padding:8px 14px;border-radius:6px;font-size:14px;cursor:pointer;transition:all .15s}
+  .btn-ghost:hover{background:#1C1D21;border-color:#3E3F45;color:#E8E8EC}
+  .btn-danger{background:transparent;border:1px solid #EF444440;color:#EF4444;padding:8px 14px;border-radius:6px;font-size:14px;cursor:pointer;transition:all .15s}
+  .btn-danger:hover{background:#EF444410}
+  .input{background:#0E0F12;border:1px solid #2E2F35;color:#E8E8EC;padding:10px 12px;border-radius:6px;font-size:14px;outline:none;transition:border-color .15s;width:100%}
+  .input:focus{border-color:#7C6FF0;box-shadow:0 0 0 3px rgba(124,111,240,0.12)}
+  .input::placeholder{color:#4A4E55}
+  .card{background:#141518;border:1px solid #222327;border-radius:10px}
+  .kanban-card{background:#141518;border:1px solid #222327;border-radius:8px;padding:12px 14px;cursor:pointer;transition:all .15s}
+  .kanban-card:hover{border-color:#7C6FF0;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+  .priority-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .avatar{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;flex-shrink:0}
+  .badge{font-size:11px;padding:3px 9px;border-radius:4px;font-weight:600;display:inline-block}
+  .page{display:none}
+  .page.active{display:block}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center}
+  .modal-bg.show{display:flex}
+  .modal-box{background:#141518;border:1px solid #222327;border-radius:12px;width:560px;max-width:90vw;max-height:88vh;overflow-y:auto}
+  .dropdown{position:absolute;top:calc(100% + 4px);right:0;background:#141518;border:1px solid #2E2F35;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,0.5);z-index:80;display:none;min-width:220px}
+  .dropdown.show{display:block}
+  .dropdown-item{padding:9px 13px;font-size:14px;color:#A0A4AD;cursor:pointer;border-radius:4px;transition:all .1s}
+  .dropdown-item:hover{background:#1C1D21;color:#E8E8EC}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;padding:12px 22px;background:#141518;border:1px solid #2E2F35;border-radius:8px;font-size:14px;color:#E8E8EC;box-shadow:0 8px 24px rgba(0,0,0,0.4);opacity:0;transition:opacity .3s,transform .3s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+  .progress-bar{height:5px;background:#1C1D21;border-radius:2px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:2px;transition:width .3s}
+  .filter-btn{font-size:13px;padding:5px 12px;border-radius:5px;cursor:pointer;transition:all .15s;border:1px solid transparent}
+  .filter-btn.active{background:rgba(124,111,240,0.15);color:#7C6FF0;font-weight:600}
+  .filter-btn:not(.active){color:#6B7079}
+  .filter-btn:not(.active):hover{background:#1C1D21;color:#A0A4AD}
+  table{border-collapse:collapse;width:100%}
+  th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#4A4E55;font-weight:600;padding:10px 12px;border-bottom:1px solid #222327}
+  td{padding:12px 12px;border-bottom:1px solid #1A1B1E;font-size:14px}
+  tr:hover td{background:#101112}
+  .checkbox{width:16px;height:16px;border:1.5px solid #2E2F35;border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+  .checkbox.checked{background:#7C6FF0;border-color:#7C6FF0}
+  .checkbox.checked::after{content:'';width:5px;height:8px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg);margin-top:-1px}
+  .date-input::-webkit-calendar-picker-indicator,.datetime-input::-webkit-calendar-picker-indicator{filter:invert(0.6);cursor:pointer}
+  .form-label{display:block;font-size:13px;font-weight:600;color:#A0A4AD;margin-bottom:6px}
+  .required{color:#EF4444}
+  /* Review System */
+  .review-panel{background:#0E0F12;border:1px solid #2E2F35;border-radius:8px;padding:16px;margin-top:16px}
+  .review-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #1A1B1E}
+  .review-item:last-child{border-bottom:none}
+  .review-avatar{width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0}
+  .review-type-badge{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600;display:inline-block;margin-right:6px}
+  .urgent-pulse{animation:pulse-red 2s infinite}
+  @keyframes pulse-red{0%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)}70%{box-shadow:0 0 0 6px rgba(239,68,68,0)}100%{box-shadow:0 0 0 0 rgba(239,68,68,0)}}
+  .review-quick-btn{font-size:12px;padding:4px 10px;border-radius:4px;border:1px solid #2E2F35;background:transparent;color:#A0A4AD;cursor:pointer;transition:all .15s;white-space:nowrap}
+  .review-quick-btn:hover{background:#1C1D21;color:#E8E8EC;border-color:#3E3F45}
+  .review-urgent-row{background:rgba(239,68,68,0.04)!important}
+  .review-urgent-row td{border-bottom-color:rgba(239,68,68,0.15)!important}
+  .confirm-box{background:#141518;border:1px solid #222327;border-radius:12px;width:400px;max-width:90vw;padding:24px;text-align:center}
+  .kbd-hint{font-size:11px;color:#4A4E55;padding:2px 6px;border:1px solid #2E2F35;border-radius:3px;font-family:monospace;display:inline-block}
+</style>
+</head>
+<body>
+<!-- ============ LOGIN ============ -->
+<div id="login-screen" style="position:fixed;inset:0;z-index:90;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 0%,rgba(124,111,240,0.08),transparent 50%),#0B0C0E">
+  <div style="width:380px">
+    <div style="display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:24px">
+      <div style="width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,#7C6FF0,#F06292);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px">A</div>
+      <span style="font-size:22px;font-weight:700" class="gradient-text">Atlas</span>
+    </div>
+    <div class="card" style="padding:28px">
+      <h1 style="font-size:22px;font-weight:600;margin:0 0 4px" data-i18n="login.title">登录 Atlas</h1>
+      <p style="font-size:15px;color:#6B7079;margin:0 0 24px" data-i18n="login.subtitle">输入凭据以继续</p>
+      <div style="display:flex;gap:8px;margin-bottom:20px">
+        <button onclick="setLang('zh')" id="lang-zh" class="btn-ghost" style="flex:1">中文</button>
+        <button onclick="setLang('en')" id="lang-en" class="btn-ghost" style="flex:1">English</button>
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:14px;font-weight:600;color:#A0A4AD;margin-bottom:6px"><span data-i18n="login.username">用户名</span> <span class="required">*</span></label>
+        <input id="login-user" class="input" placeholder="admin" autocomplete="off" data-i18n-placeholder="login.usernamePh">
+      </div>
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:14px;font-weight:600;color:#A0A4AD;margin-bottom:6px"><span data-i18n="login.password">密码</span> <span class="required">*</span></label>
+        <input id="login-pass" type="password" class="input" placeholder="••••••" data-i18n-placeholder="login.passwordPh">
+      </div>
+      <div id="login-error" style="display:none;font-size:14px;color:#EF4444;margin-bottom:14px" data-i18n="login.error">用户名或密码错误，请尝试 admin / admin</div>
+      <button onclick="doLogin()" class="btn-primary" style="width:100%;padding:11px;font-size:15px" data-i18n="login.button">登录</button>
+      <div style="margin-top:18px;padding-top:18px;border-top:1px solid #222327;text-align:center">
+        <span style="font-size:13px;color:#4A4E55" data-i18n="login.hint">演示凭据：admin / admin</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div id="main-app" style="display:none;height:100vh;overflow:hidden">
+
+  <!-- SIDEBAR -->
+  <aside style="width:240px;background:#0E0F12;border-right:1px solid #222327;display:flex;flex-direction:column;height:100vh;position:fixed;left:0;top:0;z-index:30">
+    <div style="padding:14px 16px;border-bottom:1px solid #222327">
+      <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="navigate('dashboard')">
+        <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#7C6FF0,#F06292);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px">A</div>
+        <span style="font-size:17px;font-weight:700">Atlas</span>
+        <span style="font-size:11px;color:#4A4E55;margin-left:auto">v2.0</span>
+      </div>
+    </div>
+    <div style="padding:10px 12px;border-bottom:1px solid #222327">
+      <div style="position:relative">
+        <input id="search-input" class="input" style="font-size:14px;padding:7px 10px 7px 32px" placeholder="搜索任务… (Ctrl+K)" data-i18n-placeholder="search.placeholder">
+        <svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#4A4E55" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14" stroke-linecap="round"/></svg>
+        <span class="kbd-hint" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none">Ctrl+K</span>
+      </div>
+    </div>
+    <nav style="flex:1;overflow-y:auto;padding:10px">
+      <div style="font-size:12px;font-weight:600;color:#4A4E55;text-transform:uppercase;letter-spacing:0.5px;padding:8px 8px 4px" data-i18n="nav.workspace">工作区</div>
+      <div class="nav-item active" data-nav="dashboard" onclick="navigate('dashboard')" style="position:relative;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:15px;color:#A0A4AD;margin-bottom:2px">
+        <div class="nav-indicator"></div>
+        <svg style="width:18px;height:18px" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg>
+        <span data-i18n="nav.dashboard">仪表盘</span>
+      </div>
+      <div class="nav-item" data-nav="my-issues" onclick="navigate('my-issues')" style="position:relative;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:15px;color:#A0A4AD;margin-bottom:2px">
+        <div class="nav-indicator"></div>
+        <svg style="width:18px;height:18px" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2" stroke-linecap="round"/></svg>
+        <span data-i18n="nav.myIssues">我的任务</span>
+        <span id="sidebar-my-count" style="margin-left:auto;font-size:11px;font-weight:600;padding:1px 6px;border-radius:8px;background:rgba(124,111,240,0.15);color:#7C6FF0">8</span>
+      </div>
+      <div class="nav-item" data-nav="inbox" onclick="navigate('inbox')" style="position:relative;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:15px;color:#A0A4AD;margin-bottom:2px">
+        <div class="nav-indicator"></div>
+        <svg style="width:18px;height:18px" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5l7 5 7-5M3 5v10a1 1 0 001 1h12a1 1 0 001-1V5M3 5l7 5"/></svg>
+        <span data-i18n="nav.inbox">收件箱</span>
+        <span id="sidebar-inbox-count" style="margin-left:auto;font-size:11px;font-weight:600;padding:1px 6px;border-radius:8px;background:rgba(239,68,68,0.15);color:#EF4444">3</span>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:#4A4E55;text-transform:uppercase;letter-spacing:0.5px;padding:12px 8px 4px;display:flex;justify-content:space-between;align-items:center">
+        <span data-i18n="nav.projects">项目</span>
+        <button onclick="openProjectModal()" style="background:none;border:none;color:#4A4E55;cursor:pointer;padding:0;font-size:16px" title="新建项目">+</button>
+      </div>
+      <div id="sidebar-projects"></div>
+
+      <div style="font-size:12px;font-weight:600;color:#4A4E55;text-transform:uppercase;letter-spacing:0.5px;padding:12px 8px 4px" data-i18n="nav.views">视图</div>
+      <div class="nav-item" data-nav="board" onclick="navigate('board')" style="position:relative;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:15px;color:#A0A4AD;margin-bottom:2px">
+        <div class="nav-indicator"></div>
+        <svg style="width:18px;height:18px" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="5" height="14" rx="1"/><rect x="9" y="3" width="5" height="9" rx="1"/><rect x="16" y="3" width="2" height="6" rx="1"/></svg>
+        <span data-i18n="nav.board">看板</span>
+      </div>
+      <div class="nav-item" data-nav="list" onclick="navigate('list')" style="position:relative;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:15px;color:#A0A4AD;margin-bottom:2px">
+        <div class="nav-indicator"></div>
+        <svg style="width:18px;height:18px" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h14M3 10h14M3 15h14" stroke-linecap="round"/></svg>
+        <span data-i18n="nav.list">列表</span>
+      </div>
+      <div class="nav-item" data-nav="team" onclick="navigate('team')" style="position:relative;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:15px;color:#A0A4AD;margin-bottom:2px">
+        <div class="nav-indicator"></div>
+        <svg style="width:18px;height:18px" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="8" r="3"/><circle cx="14" cy="8" r="3"/><path d="M2 17c0-3 2-5 5-5s5 2 5 5M11 17c0-3 2-5 5-5"/></svg>
+        <span data-i18n="nav.team">团队</span>
+      </div>
+      <div class="nav-item" data-nav="settings" onclick="navigate('settings')" style="position:relative;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:15px;color:#A0A4AD;margin-bottom:2px">
+        <div class="nav-indicator"></div>
+        <svg style="width:18px;height:18px" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="3"/><path d="M10 1v3M10 16v3M1 10h3M16 10h3M3.5 3.5l2 2M14.5 14.5l2 2M3.5 16.5l2-2M14.5 5.5l2-2" stroke-linecap="round"/></svg>
+        <span data-i18n="nav.settings">设置</span>
+      </div>
+    </nav>
+    <div style="padding:10px 12px;border-top:1px solid #222327;font-size:12px;color:#4A4E55;text-align:center">
+      <span data-i18n="nav.cycle">迭代 12</span> · <span data-i18n="nav.daysLeft">剩余 6 天</span>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div style="margin-left:240px;height:100vh;display:flex;flex-direction:column;overflow:hidden">
+    <!-- TOPBAR -->
+    <header style="height:54px;border-bottom:1px solid #222327;display:flex;align-items:center;padding:0 18px;gap:14px;background:#0B0C0E;flex-shrink:0">
+      <div style="font-size:15px;color:#A0A4AD" id="breadcrumb">Atlas / <span style="color:#E8E8EC;font-weight:600" data-i18n="nav.dashboard">仪表盘</span></div>
+      <div style="flex:1"></div>
+      <button onclick="openIssueModal()" class="btn-primary" style="display:flex;align-items:center;gap:5px" title="快捷键 N">
+        <svg style="width:14px;height:14px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10" stroke-linecap="round"/></svg>
+        <span data-i18n="topbar.newIssue">新建任务</span>
+        <span class="kbd-hint" style="background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.2)">N</span>
+      </button>
+      <div style="position:relative">
+        <button onclick="openProjectModal()" class="btn-ghost" style="display:flex;align-items:center;gap:5px">
+          <svg style="width:14px;height:14px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4h12M2 8h8M2 12h5" stroke-linecap="round"/></svg>
+          <span data-i18n="topbar.newProject">新建项目</span>
+        </button>
+      </div>
+      <div style="position:relative">
+        <button onclick="toggleDropdown('notif-dropdown',event)" style="background:none;border:none;cursor:pointer;color:#6B7079;position:relative;padding:4px">
+          <svg style="width:20px;height:20px" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 8a5 5 0 0110 0v3l1.5 3h-13L5 11V8z"/><path d="M8 16a2 2 0 004 0"/></svg>
+          <span style="position:absolute;top:2px;right:2px;width:7px;height:7px;border-radius:50%;background:#EF4444"></span>
+        </button>
+        <div id="notif-dropdown" class="dropdown" style="width:340px">
+          <div style="padding:12px 14px;border-bottom:1px solid #222327;font-size:14px;font-weight:600;color:#E8E8EC" data-i18n="notif.title">通知</div>
+          <div class="dropdown-item"><div style="color:#E8E8EC;font-weight:500;margin-bottom:2px;font-size:14px" data-i18n="notif.n1">陈宇 分配了任务给你</div><div style="font-size:12px;color:#4A4E55">ATL-142 · 10 分钟前</div></div>
+          <div class="dropdown-item"><div style="color:#E8E8EC;font-weight:500;margin-bottom:2px;font-size:14px" data-i18n="notif.n2">李娜 评论了 ATL-138</div><div style="font-size:12px;color:#4A4E55">1 小时前</div></div>
+          <div class="dropdown-item"><div style="color:#E8E8EC;font-weight:500;margin-bottom:2px;font-size:14px" data-i18n="notif.n3">迭代 12 截止还有 6 天</div><div style="font-size:12px;color:#4A4E55">3 小时前</div></div>
+        </div>
+      </div>
+      <div style="position:relative">
+        <button onclick="toggleDropdown('user-dropdown',event)" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:7px;padding:4px">
+          <div class="avatar" style="background:linear-gradient(135deg,#7C6FF0,#F06292);width:30px;height:30px;font-size:13px" id="user-avatar">管</div>
+          <span style="font-size:14px;color:#E8E8EC;font-weight:500" id="user-name">管理员</span>
+          <svg style="width:14px;height:14px;color:#4A4E55" viewBox="0 0 16 16" fill="currentColor"><path d="M4 6l4 4 4-4"/></svg>
+        </button>
+        <div id="user-dropdown" class="dropdown" style="width:220px">
+          <div style="padding:12px 14px;border-bottom:1px solid #222327">
+            <div style="font-size:15px;font-weight:600;color:#E8E8EC" id="user-dropdown-name">管理员</div>
+            <div style="font-size:12px;color:#4A4E55" id="user-dropdown-role">系统管理员</div>
+          </div>
+          <div class="dropdown-item" onclick="navigate('settings')" data-i18n="user.settings">个人设置</div>
+          <div class="dropdown-item" onclick="navigate('team')" data-i18n="user.subAccounts">子账号管理</div>
+          <div class="dropdown-item" onclick="doLogout()" data-i18n="user.logout">退出登录</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:2px">
+        <button onclick="setLang('zh')" id="topbar-lang-zh" style="background:none;border:none;cursor:pointer;font-size:13px;padding:5px 7px;border-radius:4px;color:#6B7079">中</button>
+        <button onclick="setLang('en')" id="topbar-lang-en" style="background:none;border:none;cursor:pointer;font-size:13px;padding:5px 7px;border-radius:4px;color:#6B7079">EN</button>
+      </div>
+    </header>
+
+    <!-- PAGES -->
+    <div style="flex:1;overflow-y:auto">
+
+      <!-- SEARCH STATUS BAR -->
+      <div id="search-status" style="display:none;padding:10px 18px;background:rgba(124,111,240,0.08);border-bottom:1px solid rgba(124,111,240,0.15);display:flex;align-items:center;gap:8px;font-size:14px;color:#7C6FF0">
+        <svg style="width:16px;height:16px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14" stroke-linecap="round"/></svg>
+        <span id="search-status-text"></span>
+        <button onclick="clearSearch()" style="margin-left:auto;background:none;border:none;cursor:pointer;color:#7C6FF0;font-size:13px;padding:2px 8px;border-radius:4px" data-i18n="search.clear">清除搜索</button>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active" style="padding:26px">
+        <div style="max-width:1400px;margin:0 auto">
+          <div style="margin-bottom:22px">
+            <h1 style="font-size:26px;font-weight:700;margin:0 0 6px" data-i18n="dash.title">迭代概览</h1>
+            <p style="font-size:15px;color:#6B7079;margin:0" data-i18n="dash.subtitle">迭代 12 · 7月28日 – 8月10日 · 4 个项目 · 6 位成员</p>
+          </div>
+          <div id="dash-stats" style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px">
+            <div class="card" style="padding:18px">
+              <div style="font-size:15px;font-weight:600;margin-bottom:14px" data-i18n="dash.burndown">燃尽图</div>
+              <svg viewBox="0 0 400 160" style="width:100%;height:140px">
+                <line x1="30" y1="10" x2="30" y2="140" stroke="#222327" stroke-width="1"/>
+                <line x1="30" y1="140" x2="390" y2="140" stroke="#222327" stroke-width="1"/>
+                <line x1="30" y1="10" x2="390" y2="140" stroke="#4A4E55" stroke-width="1.5" stroke-dasharray="4,4"/>
+                <text x="5" y="15" font-size="10" fill="#4A4E55">40</text>
+                <text x="5" y="75" font-size="10" fill="#4A4E55">20</text>
+                <text x="5" y="143" font-size="10" fill="#4A4E55">0</text>
+                <polyline points="30,10 80,25 130,35 180,50 230,55 280,62 330,68" fill="none" stroke="#7C6FF0" stroke-width="2"/>
+                <circle cx="30" cy="10" r="3" fill="#7C6FF0"/>
+                <circle cx="80" cy="25" r="3" fill="#7C6FF0"/>
+                <circle cx="130" cy="35" r="3" fill="#7C6FF0"/>
+                <circle cx="180" cy="50" r="3" fill="#7C6FF0"/>
+                <circle cx="230" cy="55" r="3" fill="#7C6FF0"/>
+                <circle cx="280" cy="62" r="3" fill="#7C6FF0"/>
+                <circle cx="330" cy="68" r="3" fill="#7C6FF0"/>
+                <text x="340" y="72" font-size="11" fill="#7C6FF0" font-weight="600">26</text>
+              </svg>
+              <div style="display:flex;gap:14px;margin-top:10px;font-size:13px">
+                <span style="color:#4A4E55">— <span data-i18n="dash.ideal">理想</span></span>
+                <span style="color:#7C6FF0">— <span data-i18n="dash.actual">实际</span></span>
+              </div>
+            </div>
+            <div class="card" style="padding:18px">
+              <div style="font-size:15px;font-weight:600;margin-bottom:14px" data-i18n="dash.velocity">迭代速率</div>
+              <div style="display:flex;align-items:flex-end;gap:14px;height:120px;padding:0 10px">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><span style="font-size:12px;color:#A0A4AD">32</span><div style="width:100%;height:64px;background:#2E2F35;border-radius:3px 3px 0 0"></div><span style="font-size:12px;color:#4A4E55">C9</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><span style="font-size:12px;color:#A0A4AD">28</span><div style="width:100%;height:56px;background:#2E2F35;border-radius:3px 3px 0 0"></div><span style="font-size:12px;color:#4A4E55">C10</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><span style="font-size:12px;color:#A0A4AD">36</span><div style="width:100%;height:72px;background:#2E2F35;border-radius:3px 3px 0 0"></div><span style="font-size:12px;color:#4A4E55">C11</span></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><span style="font-size:12px;color:#7C6FF0;font-weight:600">14</span><div style="width:100%;height:28px;background:#7C6FF0;border-radius:3px 3px 0 0"></div><span style="font-size:12px;color:#7C6FF0;font-weight:600">C12</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+            <div class="card" style="padding:18px">
+              <div style="font-size:15px;font-weight:600;margin-bottom:14px" data-i18n="dash.statusDist">状态分布</div>
+              <div id="dash-status"></div>
+            </div>
+            <div class="card" style="padding:18px">
+              <div style="font-size:15px;font-weight:600;margin-bottom:14px" data-i18n="dash.activity">最近动态</div>
+              <div id="dash-activity"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOARD -->
+      <div id="page-board" class="page" style="padding:18px">
+        <div style="margin-bottom:18px;display:flex;align-items:center;gap:12px">
+          <h1 style="font-size:22px;font-weight:700;margin:0" data-i18n="board.title">看板</h1>
+          <div id="board-project-filter" style="display:flex;gap:5px"></div>
+          <div style="flex:1"></div>
+          <span style="font-size:14px;color:#6B7079" data-i18n="board.cycle">迭代 12</span>
+        </div>
+        <div id="board-columns" style="display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;min-height:500px"></div>
+      </div>
+
+      <!-- LIST -->
+      <div id="page-list" class="page" style="padding:18px">
+        <div style="margin-bottom:18px;display:flex;align-items:center;gap:12px">
+          <h1 style="font-size:22px;font-weight:700;margin:0" data-i18n="list.title">所有任务</h1>
+          <div id="list-filters" style="display:flex;gap:5px"></div>
+          <div style="flex:1"></div>
+          <span id="list-count" style="font-size:14px;color:#6B7079"></span>
+        </div>
+        <div class="card" style="overflow:hidden">
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr>
+                <th style="width:36px"></th>
+                <th style="width:80px">ID</th>
+                <th data-i18n="list.task">任务</th>
+                <th style="width:110px" data-i18n="list.project">项目</th>
+                <th style="width:90px" data-i18n="list.priority">优先级</th>
+                <th style="width:100px" data-i18n="list.status">状态</th>
+                <th style="width:110px" data-i18n="list.assignee">负责人</th>
+                <th style="width:80px" data-i18n="list.points">故事点</th>
+                <th style="width:110px" data-i18n="list.due">截止日期</th>
+                <th style="width:140px" data-i18n="list.time">计划时间</th>
+                <th style="width:90px" data-i18n="review.listCol">批复</th>
+              </tr></thead>
+              <tbody id="list-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MY ISSUES -->
+      <div id="page-my-issues" class="page" style="padding:18px">
+        <div style="margin-bottom:18px">
+          <h1 style="font-size:22px;font-weight:700;margin:0" data-i18n="myIssues.title">我的任务</h1>
+          <p style="font-size:14px;color:#6B7079;margin:5px 0 0" data-i18n="myIssues.subtitle">分配给你的所有任务</p>
+        </div>
+        <div id="my-issues-list"></div>
+      </div>
+
+      <!-- INBOX -->
+      <div id="page-inbox" class="page" style="padding:24px">
+        <div style="max-width:900px;margin:0 auto">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+            <h1 style="font-size:22px;font-weight:700;margin:0" data-i18n="inbox.title">收件箱</h1>
+            <button onclick="openComposeModal()" class="btn-primary"><span data-i18n="inbox.compose">写邮件</span></button>
+          </div>
+          <div id="inbox-list"></div>
+        </div>
+      </div>
+
+      <!-- TEAM -->
+      <div id="page-team" class="page" style="padding:24px">
+        <div style="max-width:1200px;margin:0 auto">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+            <div>
+              <h1 style="font-size:22px;font-weight:700;margin:0" data-i18n="team.title">团队</h1>
+              <p style="font-size:14px;color:#6B7079;margin:5px 0 0" data-i18n="team.subtitle">6 位成员 · 4 个项目</p>
+            </div>
+            <button onclick="openSubAccountModal()" class="btn-primary"><span data-i18n="team.addSubAccount">创建子账号</span></button>
+          </div>
+          <div id="team-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px"></div>
+          <h2 style="font-size:18px;font-weight:700;margin:0 0 14px" data-i18n="team.subAccounts">子账号</h2>
+          <div id="subaccount-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px"></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="page-settings" class="page" style="padding:24px">
+        <div style="max-width:760px;margin:0 auto">
+          <h1 style="font-size:22px;font-weight:700;margin:0 0 22px" data-i18n="settings.title">设置</h1>
+          <div class="card" style="padding:22px;margin-bottom:18px">
+            <div style="font-size:16px;font-weight:600;margin-bottom:18px" data-i18n="settings.general">通用</div>
+            <div style="margin-bottom:14px">
+              <label style="display:block;font-size:14px;font-weight:600;color:#A0A4AD;margin-bottom:6px" data-i18n="settings.workspaceName">工作区名称</label>
+              <input class="input" value="Atlas 工作区">
+            </div>
+            <div style="margin-bottom:14px">
+              <label style="display:block;font-size:14px;font-weight:600;color:#A0A4AD;margin-bottom:6px" data-i18n="settings.description">描述</label>
+              <textarea class="input" style="height:70px;resize:vertical" data-i18n="settings.descValue">项目管理与协作平台</textarea>
+            </div>
+          </div>
+          <div class="card" style="padding:22px;margin-bottom:18px">
+            <div style="font-size:16px;font-weight:600;margin-bottom:18px" data-i18n="settings.language">语言</div>
+            <div style="display:flex;gap:10px">
+              <button onclick="setLang('zh')" id="settings-lang-zh" class="btn-ghost" style="flex:1">中文</button>
+              <button onclick="setLang('en')" id="settings-lang-en" class="btn-ghost" style="flex:1">English</button>
+            </div>
+          </div>
+          <div class="card" style="padding:22px;margin-bottom:18px">
+            <div style="font-size:16px;font-weight:600;margin-bottom:18px" data-i18n="settings.dataMgmt">数据管理</div>
+            <div style="font-size:14px;color:#6B7079;margin-bottom:14px;line-height:1.6" data-i18n="settings.dataDesc">所有任务、项目、批复和邮件数据自动保存到浏览器本地存储。重置将清除所有变更并恢复初始状态。</div>
+            <button onclick="resetData()" class="btn-danger" data-i18n="settings.resetData">重置所有数据</button>
+          </div>
+          <div class="card" style="padding:22px;margin-bottom:18px">
+            <div style="font-size:16px;font-weight:600;margin-bottom:14px" data-i18n="settings.shortcuts">键盘快捷键</div>
+            <div style="display:flex;flex-direction:column;gap:10px;font-size:14px;color:#A0A4AD">
+              <div style="display:flex;justify-content:space-between;align-items:center"><span data-i18n="settings.kbdSearch">搜索任务</span><span class="kbd-hint">Ctrl+K</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span data-i18n="settings.kbdNew">新建任务</span><span class="kbd-hint">N</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span data-i18n="settings.kbdCompose">写邮件（收件箱页）</span><span class="kbd-hint">C</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span data-i18n="settings.kbdClose">关闭弹窗</span><span class="kbd-hint">ESC</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center"><span data-i18n="settings.kbdLogin">登录</span><span class="kbd-hint">Enter</span></div>
+            </div>
+          </div>
+          <div class="card" style="padding:22px">
+            <div style="font-size:16px;font-weight:600;margin-bottom:18px" data-i18n="settings.about">关于</div>
+            <div style="font-size:14px;color:#6B7079;line-height:1.8">
+              Atlas v2.0 — <span data-i18n="settings.aboutDesc">开源项目管理平台</span><br>
+              Linear-style · Tailwind CSS · Pure HTML/JS
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ ISSUE MODAL ============ -->
+<div id="issue-modal" class="modal-bg" onclick="if(event.target===this)closeIssueModal()">
+  <div class="modal-box">
+    <div style="padding:16px 22px;border-bottom:1px solid #222327;display:flex;align-items:center;justify-content:space-between">
+      <span id="modal-title" style="font-size:17px;font-weight:600" data-i18n="modal.newTitle">新建任务</span>
+      <button onclick="closeIssueModal()" style="background:none;border:none;cursor:pointer;color:#6B7079;font-size:18px">✕</button>
+    </div>
+    <div style="padding:22px">
+      <div style="margin-bottom:14px">
+        <label class="form-label" data-i18n="modal.taskName">任务标题</label>
+        <input id="modal-name" class="input" placeholder="输入任务标题…" data-i18n-placeholder="modal.taskNamePh">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div><label class="form-label" data-i18n="modal.project">项目</label><select id="modal-project" class="input"></select></div>
+        <div><label class="form-label" data-i18n="modal.assignee">负责人</label><select id="modal-assignee" class="input"></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div><label class="form-label" data-i18n="modal.priority">优先级</label><select id="modal-priority" class="input"><option value="urgent" data-i18n="pri.urgent">紧急</option><option value="high" data-i18n="pri.high">高</option><option value="medium" data-i18n="pri.medium">中</option><option value="low" data-i18n="pri.low">低</option></select></div>
+        <div><label class="form-label" data-i18n="modal.status">状态</label><select id="modal-status" class="input"><option value="backlog" data-i18n="status.backlog">待办</option><option value="todo" data-i18n="status.todo">待处理</option><option value="in-progress" data-i18n="status.inProgress">进行中</option><option value="in-review" data-i18n="status.inReview">审核中</option><option value="done" data-i18n="status.done">已完成</option></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div><label class="form-label" data-i18n="modal.points">故事点</label><input id="modal-points" type="number" class="input" value="3" min="0" max="21"></div>
+        <div><label class="form-label" data-i18n="modal.due">截止日期</label><input id="modal-due" type="date" class="input date-input"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div><label class="form-label" data-i18n="modal.startTime">计划开始时间</label><input id="modal-start" type="datetime-local" class="input datetime-input"></div>
+        <div><label class="form-label" data-i18n="modal.endTime">计划结束时间</label><input id="modal-end" type="datetime-local" class="input datetime-input"></div>
+      </div>
+      <div style="margin-bottom:14px"><label class="form-label" data-i18n="modal.labels">标签</label><input id="modal-labels" class="input" placeholder="frontend, bug, v2.0" data-i18n-placeholder="modal.labelsPh"></div>
+      <div><label class="form-label" data-i18n="modal.description">描述</label><textarea id="modal-desc" class="input" style="height:90px;resize:vertical" placeholder="任务描述…" data-i18n-placeholder="modal.descPh"></textarea></div>
+    </div>
+    <div style="padding:14px 22px;border-top:1px solid #222327;display:flex;justify-content:flex-end;gap:10px">
+      <button onclick="closeIssueModal()" class="btn-ghost" data-i18n="modal.cancel">取消</button>
+      <button onclick="saveIssue()" class="btn-primary" data-i18n="modal.save">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ISSUE DETAIL PANEL ============ -->
+<div id="issue-detail" class="modal-bg" onclick="if(event.target===this)closeIssueDetail()">
+  <div class="modal-box" style="width:640px">
+    <div style="padding:16px 22px;border-bottom:1px solid #222327;display:flex;align-items:center;justify-content:space-between">
+      <span id="detail-id" style="font-size:13px;color:#7C6FF0;font-weight:600;font-family:monospace"></span>
+      <button onclick="closeIssueDetail()" style="background:none;border:none;cursor:pointer;color:#6B7079;font-size:18px">✕</button>
+    </div>
+    <div style="padding:22px">
+      <h2 id="detail-title" style="font-size:20px;font-weight:700;margin:0 0 18px"></h2>
+      <div id="detail-meta" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px"></div>
+      <div id="detail-desc" style="font-size:15px;color:#A0A4AD;line-height:1.7;margin-bottom:18px"></div>
+      <div id="detail-time" style="font-size:14px;color:#6B7079;margin-bottom:18px"></div>
+      <div style="font-size:14px;font-weight:600;color:#A0A4AD;margin-bottom:10px" data-i18n="detail.move">移动到</div>
+      <div id="detail-move" style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:18px"></div>
+      <div style="font-size:14px;font-weight:600;color:#A0A4AD;margin-bottom:10px" data-i18n="detail.actions">操作</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="editCurrentIssue()" class="btn-ghost" data-i18n="detail.edit">编辑</button>
+        <button onclick="deleteCurrentIssue()" class="btn-danger" data-i18n="detail.delete">删除</button>
+      </div>
+      <!-- Review Panel -->
+      <div class="review-panel">
+        <div style="font-size:15px;font-weight:600;color:#E8E8EC;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+          <svg style="width:18px;height:18px;color:#7C6FF0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 8a5 5 0 0110 0v3l1.5 3h-13L5 11V8z"/><path d="M8 16a2 2 0 004 0"/><path d="M3 3l14 14" stroke-linecap="round" opacity="0.4"/></svg>
+          <span data-i18n="review.title">批复与指导</span>
+        </div>
+        <div style="margin-bottom:12px">
+          <label class="form-label" data-i18n="review.type">批复类型</label>
+          <select id="review-type" class="input" style="margin-bottom:10px">
+            <option value="guidance" data-i18n="review.guidance">指导</option>
+            <option value="coordination" data-i18n="review.coordination">协调</option>
+            <option value="contactCall" data-i18n="review.contactCall">电话联系</option>
+            <option value="approval" data-i18n="review.approval">批复</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div>
+            <label class="form-label" data-i18n="review.coordinate">协调人员</label>
+            <select id="review-coordinate" class="input"><option value="">—</option></select>
+          </div>
+          <div>
+            <label class="form-label" data-i18n="review.contact">联系人员</label>
+            <select id="review-contact" class="input"><option value="">—</option></select>
+          </div>
+        </div>
+        <div style="margin-bottom:12px">
+          <label class="form-label" data-i18n="review.title">批复意见</label>
+          <textarea id="review-content" class="input" style="height:80px;resize:vertical" data-i18n-placeholder="review.inputPh" placeholder="输入批复意见…"></textarea>
+        </div>
+        <button onclick="submitReview()" class="btn-primary" style="width:100%" data-i18n="review.submit">提交批复</button>
+        <div style="margin-top:16px">
+          <div style="font-size:13px;font-weight:600;color:#6B7079;margin-bottom:10px" data-i18n="review.history">批复历史</div>
+          <div id="detail-reviews"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PROJECT MODAL ============ -->
+<div id="project-modal" class="modal-bg" onclick="if(event.target===this)closeProjectModal()">
+  <div class="modal-box" style="width:440px">
+    <div style="padding:16px 22px;border-bottom:1px solid #222327;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:17px;font-weight:600" data-i18n="projectModal.title">新建项目</span>
+      <button onclick="closeProjectModal()" style="background:none;border:none;cursor:pointer;color:#6B7079;font-size:18px">✕</button>
+    </div>
+    <div style="padding:22px">
+      <div style="margin-bottom:14px"><label class="form-label"><span data-i18n="projectModal.name">项目名称</span> <span class="required">*</span></label><input id="project-name" class="input" data-i18n-placeholder="projectModal.namePh"></div>
+      <div style="margin-bottom:14px"><label class="form-label" data-i18n="projectModal.key">项目标识</label><input id="project-key" class="input" placeholder="WEB" style="text-transform:uppercase"></div>
+      <div style="margin-bottom:14px"><label class="form-label" data-i18n="projectModal.color">颜色</label><div style="display:flex;gap:10px;flex-wrap:wrap"><button onclick="selectProjectColor('#5B9BF2')" class="project-color-btn" style="width:28px;height:28px;border-radius:50%;background:#5B9BF2;border:2px solid transparent;cursor:pointer"></button><button onclick="selectProjectColor('#F06292')" class="project-color-btn" style="width:28px;height:28px;border-radius:50%;background:#F06292;border:2px solid transparent;cursor:pointer"></button><button onclick="selectProjectColor('#F5A623')" class="project-color-btn" style="width:28px;height:28px;border-radius:50%;background:#F5A623;border:2px solid transparent;cursor:pointer"></button><button onclick="selectProjectColor('#4CB782')" class="project-color-btn" style="width:28px;height:28px;border-radius:50%;background:#4CB782;border:2px solid transparent;cursor:pointer"></button><button onclick="selectProjectColor('#7C6FF0')" class="project-color-btn" style="width:28px;height:28px;border-radius:50%;background:#7C6FF0;border:2px solid transparent;cursor:pointer"></button><button onclick="selectProjectColor('#3DCCC7')" class="project-color-btn" style="width:28px;height:28px;border-radius:50%;background:#3DCCC7;border:2px solid transparent;cursor:pointer"></button></div></div>
+      <div><label class="form-label" data-i18n="projectModal.desc">描述</label><textarea id="project-desc" class="input" style="height:70px;resize:vertical" data-i18n-placeholder="projectModal.descPh"></textarea></div>
+    </div>
+    <div style="padding:14px 22px;border-top:1px solid #222327;display:flex;justify-content:flex-end;gap:10px">
+      <button onclick="closeProjectModal()" class="btn-ghost" data-i18n="modal.cancel">取消</button>
+      <button onclick="saveProject()" class="btn-primary" data-i18n="projectModal.save">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SUB ACCOUNT MODAL ============ -->
+<div id="subaccount-modal" class="modal-bg" onclick="if(event.target===this)closeSubAccountModal()">
+  <div class="modal-box" style="width:520px">
+    <div style="padding:16px 22px;border-bottom:1px solid #222327;display:flex;align-items:center;justify-content:space-between">
+      <span id="subaccount-modal-title" style="font-size:17px;font-weight:600" data-i18n="subModal.title">创建子账号</span>
+      <button onclick="closeSubAccountModal()" style="background:none;border:none;cursor:pointer;color:#6B7079;font-size:18px">✕</button>
+    </div>
+    <div style="padding:22px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div><label class="form-label"><span data-i18n="subModal.phone">手机号码</span> <span class="required">*</span></label><input id="sub-phone" class="input" type="tel" placeholder="13800000000"></div>
+        <div><label class="form-label"><span data-i18n="subModal.name">姓名</span> <span class="required">*</span></label><input id="sub-name" class="input" placeholder="陈宇"></div>
+      </div>
+      <div style="margin-bottom:14px"><label class="form-label" data-i18n="subModal.email">邮箱</label><input id="sub-email" class="input" type="email" placeholder="name@company.com"></div>
+      <div style="margin-bottom:14px"><label class="form-label" data-i18n="subModal.dept">公司部门（可选）</label><input id="sub-dept" class="input" placeholder="产品部"></div>
+      <div><label class="form-label" data-i18n="subModal.permissions">权限管理</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#A0A4AD;cursor:pointer;padding:8px;border-radius:6px;background:#0E0F12;border:1px solid #222327"><input type="checkbox" value="newIssue" class="sub-perm" style="accent-color:#7C6FF0;width:16px;height:16px"><span data-i18n="perm.newIssue">新建任务</span></label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#A0A4AD;cursor:pointer;padding:8px;border-radius:6px;background:#0E0F12;border:1px solid #222327"><input type="checkbox" value="dashboard" class="sub-perm" style="accent-color:#7C6FF0;width:16px;height:16px"><span data-i18n="perm.dashboard">我的仪表盘</span></label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#A0A4AD;cursor:pointer;padding:8px;border-radius:6px;background:#0E0F12;border:1px solid #222327"><input type="checkbox" value="board" class="sub-perm" style="accent-color:#7C6FF0;width:16px;height:16px"><span data-i18n="perm.board">我的看板</span></label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#A0A4AD;cursor:pointer;padding:8px;border-radius:6px;background:#0E0F12;border:1px solid #222327"><input type="checkbox" value="tasks" class="sub-perm" style="accent-color:#7C6FF0;width:16px;height:16px"><span data-i18n="perm.tasks">我的任务</span></label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#A0A4AD;cursor:pointer;padding:8px;border-radius:6px;background:#0E0F12;border:1px solid #222327"><input type="checkbox" value="projects" class="sub-perm" style="accent-color:#7C6FF0;width:16px;height:16px"><span data-i18n="perm.projects">我的项目</span></label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:#A0A4AD;cursor:pointer;padding:8px;border-radius:6px;background:#0E0F12;border:1px solid #222327"><input type="checkbox" value="inbox" class="sub-perm" style="accent-color:#7C6FF0;width:16px;height:16px"><span data-i18n="perm.inbox">收件箱</span></label>
+      </div></div>
+    </div>
+    <div style="padding:14px 22px;border-top:1px solid #222327;display:flex;justify-content:flex-end;gap:10px">
+      <button onclick="closeSubAccountModal()" class="btn-ghost" data-i18n="modal.cancel">取消</button>
+      <button onclick="saveSubAccount()" class="btn-primary" data-i18n="subModal.save">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ COMPOSE MESSAGE MODAL ============ -->
+<div id="compose-modal" class="modal-bg" onclick="if(event.target===this)closeComposeModal()">
+  <div class="modal-box" style="width:560px">
+    <div style="padding:16px 22px;border-bottom:1px solid #222327;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:17px;font-weight:600" data-i18n="compose.title">写邮件</span>
+      <button onclick="closeComposeModal()" style="background:none;border:none;cursor:pointer;color:#6B7079;font-size:18px">✕</button>
+    </div>
+    <div style="padding:22px">
+      <div style="margin-bottom:14px"><label class="form-label" data-i18n="compose.to">收件人</label><select id="compose-to" class="input"></select></div>
+      <div style="margin-bottom:14px"><label class="form-label" data-i18n="compose.subject">主题</label><input id="compose-subject" class="input" placeholder="关于…"></div>
+      <div><label class="form-label" data-i18n="compose.body">内容</label><textarea id="compose-body" class="input" style="height:130px;resize:vertical" placeholder="请输入内容…"></textarea></div>
+    </div>
+    <div style="padding:14px 22px;border-top:1px solid #222327;display:flex;justify-content:flex-end;gap:10px">
+      <button onclick="closeComposeModal()" class="btn-ghost" data-i18n="modal.cancel">取消</button>
+      <button onclick="sendMessage()" class="btn-primary" data-i18n="compose.send">发送</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONFIRM DIALOG ============ -->
+<div id="confirm-modal" class="modal-bg" onclick="if(event.target===this)closeConfirm()">
+  <div class="confirm-box">
+    <div id="confirm-icon" style="font-size:36px;margin-bottom:12px">⚠️</div>
+    <div id="confirm-title" style="font-size:17px;font-weight:600;color:#E8E8EC;margin-bottom:8px"></div>
+    <div id="confirm-msg" style="font-size:14px;color:#6B7079;margin-bottom:20px;line-height:1.5"></div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button onclick="closeConfirm()" class="btn-ghost" data-i18n="modal.cancel">取消</button>
+      <button id="confirm-ok-btn" class="btn-danger" style="background:#EF4444;color:#fff;border-color:#EF4444">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ========== I18N ========== */
+var I18N = {
+  zh: {
+    'login.title':'登录 Atlas','login.subtitle':'输入凭据以继续','login.username':'用户名','login.usernamePh':'输入用户名',
+    'login.password':'密码','login.passwordPh':'输入密码','login.error':'用户名或密码错误，请尝试 admin / admin',
+    'login.button':'登录','login.hint':'演示凭据：admin / admin',
+    'search.placeholder':'搜索任务…',
+    'nav.workspace':'工作区','nav.dashboard':'仪表盘','nav.myIssues':'我的任务','nav.inbox':'收件箱',
+    'nav.projects':'项目','nav.views':'视图','nav.board':'看板','nav.list':'列表','nav.team':'团队','nav.settings':'设置',
+    'nav.cycle':'迭代 12','nav.daysLeft':'剩余 6 天',
+    'topbar.newIssue':'新建任务','topbar.newProject':'新建项目',
+    'notif.title':'通知','notif.n1':'陈宇 分配了任务给你','notif.n2':'李娜 评论了 ATL-138','notif.n3':'迭代 12 截止还有 6 天',
+    'user.settings':'个人设置','user.subAccounts':'子账号管理','user.logout':'退出登录',
+    'dash.title':'迭代概览','dash.subtitle':'迭代 12 · 7月28日 – 8月10日 · 4 个项目 · 6 位成员',
+    'dash.burndown':'燃尽图','dash.velocity':'迭代速率','dash.ideal':'理想','dash.actual':'实际',
+    'dash.statusDist':'状态分布','dash.activity':'最近动态',
+    'dash.totalTasks':'总任务','dash.completed':'已完成','dash.inProgress':'进行中','dash.overdue':'逾期',
+    'board.title':'看板','board.cycle':'迭代 12',
+    'list.title':'所有任务','list.task':'任务','list.project':'项目','list.priority':'优先级','list.status':'状态','list.assignee':'负责人','list.points':'故事点','list.due':'截止日期','list.time':'计划时间',
+    'myIssues.title':'我的任务','myIssues.subtitle':'分配给你的所有任务',
+    'inbox.title':'收件箱','inbox.compose':'写邮件',
+    'team.title':'团队','team.subtitle':'6 位成员 · 4 个项目','team.addSubAccount':'创建子账号','team.subAccounts':'子账号',
+    'settings.title':'设置','settings.general':'通用','settings.workspaceName':'工作区名称','settings.description':'描述','settings.descValue':'项目管理与协作平台','settings.language':'语言','settings.about':'关于','settings.aboutDesc':'开源项目管理平台',
+    'modal.newTitle':'新建任务','modal.editTitle':'编辑任务','modal.taskName':'任务标题','modal.taskNamePh':'输入任务标题…',
+    'modal.project':'项目','modal.assignee':'负责人','modal.priority':'优先级','modal.status':'状态','modal.points':'故事点','modal.due':'截止日期','modal.startTime':'计划开始时间','modal.endTime':'计划结束时间','modal.labels':'标签','modal.labelsPh':'frontend, bug, v2.0','modal.description':'描述','modal.descPh':'任务描述…','modal.cancel':'取消','modal.save':'保存',
+    'pri.urgent':'紧急','pri.high':'高','pri.medium':'中','pri.low':'低',
+    'status.backlog':'待办','status.todo':'待处理','status.inProgress':'进行中','status.inReview':'审核中','status.done':'已完成',
+    'detail.move':'移动到','detail.actions':'操作','detail.edit':'编辑','detail.delete':'删除',
+    'toast.created':'任务已创建','toast.updated':'任务已更新','toast.deleted':'任务已删除','toast.loginSuccess':'欢迎回来','toast.loggedOut':'已退出登录','toast.projectCreated':'项目已创建','toast.subAccountCreated':'子账号已创建','toast.messageSent':'邮件已发送',
+    'proj.website':'官网重构','proj.mobile':'移动端 v2.0','proj.data':'数据平台','proj.tools':'内部工具',
+    'projectModal.title':'新建项目','projectModal.name':'项目名称','projectModal.namePh':'输入项目名称','projectModal.key':'项目标识','projectModal.color':'颜色','projectModal.desc':'描述','projectModal.descPh':'项目描述…','projectModal.save':'保存',
+    'subModal.title':'创建子账号','subModal.phone':'手机号码','subModal.name':'姓名','subModal.email':'邮箱','subModal.dept':'公司部门','subModal.permissions':'权限管理','subModal.save':'保存',
+    'perm.newIssue':'新建任务','perm.dashboard':'我的仪表盘','perm.board':'我的看板','perm.tasks':'我的任务','perm.projects':'我的项目','perm.inbox':'收件箱',
+    'compose.title':'写邮件','compose.to':'收件人','compose.subject':'主题','compose.body':'内容','compose.send':'发送',
+    'activity.1':'王浩 将 ATL-142 移至 进行中','activity.2':'李娜 完成了 ATL-138','activity.3':'赵雪 创建了 ATL-145','activity.4':'陈宇 评论了 ATL-140','activity.5':'刘洋 关闭了迭代 11',
+    'filter.all':'全部','filter.urgent':'紧急','filter.high':'高','filter.medium':'中','filter.low':'低',
+    'time.created':'创建于','time.start':'计划开始','time.end':'计划结束','time.due':'截止',
+    'review.title':'批复与指导','review.inputPh':'输入批复意见…','review.type':'批复类型','review.coordinate':'协调人员','review.contact':'联系人员','review.submit':'提交批复','review.history':'批复历史','review.noHistory':'暂无批复记录','review.guidance':'指导','review.coordination':'协调','review.contactCall':'电话联系','review.approval':'批复','review.reviewed':'已批复','review.pending':'待批复','review.urgentPending':'待批复','review.coordinatePrefix':'协调','review.contactPrefix':'电话联系','review.listCol':'批复','review.dashPendingReview':'待批复紧急任务','review.quickReview':'批复','review.to':'致','review.by':'批复人','review.toastSubmitted':'批复已提交','review.toastCoordSent':'协调通知已发送','review.all':'全部','review.pendingOnly':'仅待批复'
+  },
+  en: {
+    'login.title':'Sign in to Atlas','login.subtitle':'Enter your credentials to continue','login.username':'Username','login.usernamePh':'Enter username',
+    'login.password':'Password','login.passwordPh':'Enter password','login.error':'Invalid credentials. Try admin / admin',
+    'login.button':'Sign in','login.hint':'Demo credentials: admin / admin',
+    'search.placeholder':'Search issues…',
+    'nav.workspace':'Workspace','nav.dashboard':'Dashboard','nav.myIssues':'My Issues','nav.inbox':'Inbox',
+    'nav.projects':'Projects','nav.views':'Views','nav.board':'Board','nav.list':'List','nav.team':'Team','nav.settings':'Settings',
+    'nav.cycle':'Cycle 12','nav.daysLeft':'6 days left',
+    'topbar.newIssue':'New Issue','topbar.newProject':'New Project',
+    'notif.title':'Notifications','notif.n1':'Chen Yu assigned a task to you','notif.n2':'Li Na commented on ATL-138','notif.n3':'Cycle 12 ends in 6 days',
+    'user.settings':'Settings','user.subAccounts':'Sub Accounts','user.logout':'Sign out',
+    'dash.title':'Cycle Overview','dash.subtitle':'Cycle 12 · Jul 28 – Aug 10 · 4 projects · 6 members',
+    'dash.burndown':'Burndown','dash.velocity':'Velocity','dash.ideal':'Ideal','dash.actual':'Actual',
+    'dash.statusDist':'Status Distribution','dash.activity':'Recent Activity',
+    'dash.totalTasks':'Total Issues','dash.completed':'Completed','dash.inProgress':'In Progress','dash.overdue':'Overdue',
+    'board.title':'Board','board.cycle':'Cycle 12',
+    'list.title':'All Issues','list.task':'Task','list.project':'Project','list.priority':'Priority','list.status':'Status','list.assignee':'Assignee','list.points':'Points','list.due':'Due Date','list.time':'Planned Time',
+    'myIssues.title':'My Issues','myIssues.subtitle':'All issues assigned to you',
+    'inbox.title':'Inbox','inbox.compose':'Compose',
+    'team.title':'Team','team.subtitle':'6 members · 4 projects','team.addSubAccount':'Add Sub Account','team.subAccounts':'Sub Accounts',
+    'settings.title':'Settings','settings.general':'General','settings.workspaceName':'Workspace Name','settings.description':'Description','settings.descValue':'Project management & collaboration platform','settings.language':'Language','settings.about':'About','settings.aboutDesc':'Open-source project management platform',
+    'modal.newTitle':'New Issue','modal.editTitle':'Edit Issue','modal.taskName':'Task Title','modal.taskNamePh':'Enter task title…',
+    'modal.project':'Project','modal.assignee':'Assignee','modal.priority':'Priority','modal.status':'Status','modal.points':'Story Points','modal.due':'Due Date','modal.startTime':'Planned Start','modal.endTime':'Planned End','modal.labels':'Labels','modal.labelsPh':'frontend, bug, v2.0','modal.description':'Description','modal.descPh':'Task description…','modal.cancel':'Cancel','modal.save':'Save',
+    'pri.urgent':'Urgent','pri.high':'High','pri.medium':'Medium','pri.low':'Low',
+    'status.backlog':'Backlog','status.todo':'Todo','status.inProgress':'In Progress','status.inReview':'In Review','status.done':'Done',
+    'detail.move':'Move to','detail.actions':'Actions','detail.edit':'Edit','detail.delete':'Delete',
+    'toast.created':'Issue created','toast.updated':'Issue updated','toast.deleted':'Issue deleted','toast.loginSuccess':'Welcome back','toast.loggedOut':'Signed out','toast.projectCreated':'Project created','toast.subAccountCreated':'Sub account created','toast.messageSent':'Message sent',
+    'proj.website':'Website Redesign','proj.mobile':'Mobile App v2.0','proj.data':'Data Platform','proj.tools':'Internal Tools',
+    'projectModal.title':'New Project','projectModal.name':'Project Name','projectModal.namePh':'Enter project name','projectModal.key':'Key','projectModal.color':'Color','projectModal.desc':'Description','projectModal.descPh':'Project description…','projectModal.save':'Save',
+    'subModal.title':'Create Sub Account','subModal.phone':'Phone','subModal.name':'Name','subModal.email':'Email','subModal.dept':'Department','subModal.permissions':'Permissions','subModal.save':'Save',
+    'perm.newIssue':'New Issue','perm.dashboard':'Dashboard','perm.board':'Board','perm.tasks':'My Tasks','perm.projects':'Projects','perm.inbox':'Inbox',
+    'compose.title':'Compose Message','compose.to':'To','compose.subject':'Subject','compose.body':'Body','compose.send':'Send',
+    'activity.1':'Wang Hao moved ATL-142 to In Progress','activity.2':'Li Na completed ATL-138','activity.3':'Zhao Xue created ATL-145','activity.4':'Chen Yu commented on ATL-140','activity.5':'Liu Yang closed Cycle 11',
+    'filter.all':'All','filter.urgent':'Urgent','filter.high':'High','filter.medium':'Medium','filter.low':'Low',
+    'time.created':'Created','time.start':'Start','time.end':'End','time.due':'Due',
+    'review.title':'Review & Guidance','review.inputPh':'Enter review comment…','review.type':'Review Type','review.coordinate':'Coordinate With','review.contact':'Contact Person','review.submit':'Submit Review','review.history':'Review History','review.noHistory':'No reviews yet','review.guidance':'Guidance','review.coordination':'Coordinate','review.contactCall':'Call','review.approval':'Approval','review.reviewed':'Reviewed','review.pending':'Pending','review.urgentPending':'Pending Review','review.coordinatePrefix':'Coordinate','review.contactPrefix':'Call','review.listCol':'Review','review.dashPendingReview':'Urgent Pending Review','review.quickReview':'Review','review.to':'To','review.by':'Reviewer','review.toastSubmitted':'Review submitted','review.toastCoordSent':'Coordination notice sent','review.all':'All','review.pendingOnly':'Pending Only'
+  }
+};
+var lang = (function(){ try { return localStorage.getItem('atlas-lang')||'zh'; } catch(e){ return 'zh'; } })();
+function t(k){ return (I18N[lang]&&I18N[lang][k]) || I18N.en[k] || k; }
+function $(id){ return document.getElementById(id); }
+
+/* ========== CURRENT USER ========== */
+var CURRENT_USER = { id:'admin', name:'管理员', nameEn:'Administrator', role:'admin', permissions:['all'], avatar:'管' };
+
+/* ========== DATA ========== */
+var PROJECTS = [
+  { id:'website', key:'WEB', name:'官网重构', nameEn:'Website Redesign', color:'#5B9BF2' },
+  { id:'mobile', key:'MOB', name:'移动端 v2.0', nameEn:'Mobile App v2.0', color:'#F06292' },
+  { id:'data', key:'DAT', name:'数据平台', nameEn:'Data Platform', color:'#F5A623' },
+  { id:'tools', key:'INT', name:'内部工具', nameEn:'Internal Tools', color:'#4CB782' }
+];
+function projName(p){ return lang==='zh' ? p.name : p.nameEn; }
+
+var MEMBERS = [
+  { id:'cy', name:'陈宇', nameEn:'Chen Yu', avatar:'陈', avEn:'CY', color:'#7C6FF0', role:'项目经理', roleEn:'Project Manager', phone:'13800000001', email:'chenyu@atlas.io', dept:'产品部' },
+  { id:'zm', name:'张明', nameEn:'Zhang Ming', avatar:'张', avEn:'ZM', color:'#5B9BF2', role:'前端工程师', roleEn:'Frontend Dev', phone:'13800000002', email:'zhangming@atlas.io', dept:'研发部' },
+  { id:'wh', name:'王浩', nameEn:'Wang Hao', avatar:'王', avEn:'WH', color:'#F06292', role:'后端工程师', roleEn:'Backend Dev', phone:'13800000003', email:'wanghao@atlas.io', dept:'研发部' },
+  { id:'ln', name:'李娜', nameEn:'Li Na', avatar:'李', avEn:'LN', color:'#3DCCC7', role:'产品设计师', roleEn:'Product Designer', phone:'13800000004', email:'lina@atlas.io', dept:'设计部' },
+  { id:'zx', name:'赵雪', nameEn:'Zhao Xue', avatar:'赵', avEn:'ZX', color:'#F5A623', role:'测试工程师', roleEn:'QA Engineer', phone:'13800000005', email:'zhaoxue@atlas.io', dept:'测试部' },
+  { id:'ly', name:'刘洋', nameEn:'Liu Yang', avatar:'刘', avEn:'LY', color:'#4CB782', role:'DevOps', roleEn:'DevOps', phone:'13800000006', email:'liuyang@atlas.io', dept:'运维部' }
+];
+function memName(m){ return lang==='zh' ? m.name : m.nameEn; }
+function memRole(m){ return lang==='zh' ? m.role : m.roleEn; }
+
+var SUB_ACCOUNTS = [
+  { id:'cy', phone:'13800000001', name:'陈宇', nameEn:'Chen Yu', email:'chenyu@atlas.io', dept:'产品部', permissions:['dashboard','board','tasks','projects','newIssue','inbox'], color:'#7C6FF0' },
+  { id:'zm', phone:'13800000002', name:'张明', nameEn:'Zhang Ming', email:'zhangming@atlas.io', dept:'研发部', permissions:['dashboard','board','tasks','newIssue','inbox'], color:'#5B9BF2' },
+  { id:'wh', phone:'13800000003', name:'王浩', nameEn:'Wang Hao', email:'wanghao@atlas.io', dept:'研发部', permissions:['dashboard','board','tasks','newIssue','inbox'], color:'#F06292' },
+  { id:'ln', phone:'13800000004', name:'李娜', nameEn:'Li Na', email:'lina@atlas.io', dept:'设计部', permissions:['dashboard','board','tasks','projects','inbox'], color:'#3DCCC7' },
+  { id:'zx', phone:'13800000005', name:'赵雪', nameEn:'Zhao Xue', email:'zhaoxue@atlas.io', dept:'测试部', permissions:['dashboard','tasks','inbox'], color:'#F5A623' },
+  { id:'ly', phone:'13800000006', name:'刘洋', nameEn:'Liu Yang', email:'liuyang@atlas.io', dept:'运维部', permissions:['dashboard','board','tasks','projects','inbox'], color:'#4CB782' }
+];
+function subName(s){ return lang==='zh' ? s.name : s.nameEn; }
+
+var PRIORITIES = {
+  urgent: { label:'紧急', labelEn:'Urgent', color:'#EF4444' },
+  high: { label:'高', labelEn:'High', color:'#F5A623' },
+  medium: { label:'中', labelEn:'Medium', color:'#5B9BF2' },
+  low: { label:'低', labelEn:'Low', color:'#6B7079' }
+};
+function priLabel(p){ return lang==='zh' ? PRIORITIES[p].label : PRIORITIES[p].labelEn; }
+
+var STATUSES = {
+  backlog: { label:'待办', labelEn:'Backlog', color:'#6B7079' },
+  todo: { label:'待处理', labelEn:'Todo', color:'#5B9BF2' },
+  'in-progress': { label:'进行中', labelEn:'In Progress', color:'#7C6FF0' },
+  'in-review': { label:'审核中', labelEn:'In Review', color:'#F5A623' },
+  done: { label:'已完成', labelEn:'Done', color:'#4CB782' }
+};
+function statusLabel(s){ return lang==='zh' ? STATUSES[s].label : STATUSES[s].labelEn; }
+
+var STATUS_ORDER = ['backlog','todo','in-progress','in-review','done'];
+
+var ISSUES = [
+  { id:'ATL-141', title:'设计首页 Hero 区域交互稿', titleEn:'Design homepage hero section interaction', project:'website', priority:'high', status:'in-review', assignee:'ln', points:5, due:'2026-08-05', start:'2026-07-28T09:00', end:'2026-08-05T18:00', createdAt:'2026-07-25T10:00', labels:['design','frontend'], desc:'完成首页 Hero 区域的交互设计稿，包含动效说明和响应式适配方案。', descEn:'Complete interaction design for hero section including animation specs and responsive layout.' },
+  { id:'ATL-142', title:'实现 OAuth2 认证流程', titleEn:'Implement OAuth2 authentication flow', project:'website', priority:'urgent', status:'in-progress', assignee:'wh', points:8, due:'2026-08-08', start:'2026-07-29T09:00', end:'2026-08-08T18:00', createdAt:'2026-07-24T14:00', labels:['backend','auth'], desc:'实现完整的 OAuth2 认证流程，支持 GitHub、Google 登录，包含 token 刷新机制。', descEn:'Implement full OAuth2 flow with GitHub and Google login, including token refresh.' },
+  { id:'ATL-143', title:'搭建项目 CI/CD 流水线', titleEn:'Set up CI/CD pipeline', project:'tools', priority:'high', status:'done', assignee:'ly', points:5, due:'2026-08-01', start:'2026-07-26T09:00', end:'2026-08-01T18:00', createdAt:'2026-07-23T09:00', labels:['devops','ci'], desc:'使用 GitHub Actions 搭建自动化构建、测试、部署流水线。', descEn:'Set up automated build, test, deploy pipeline using GitHub Actions.' },
+  { id:'ATL-144', title:'编写认证模块单元测试', titleEn:'Write unit tests for auth module', project:'website', priority:'medium', status:'todo', assignee:'zx', points:3, due:'2026-08-10', start:'2026-08-06T09:00', end:'2026-08-10T18:00', createdAt:'2026-07-26T11:00', labels:['testing','auth'], desc:'为认证模块编写覆盖率达 80% 的单元测试。', descEn:'Write unit tests for auth module with 80% coverage.' },
+  { id:'ATL-145', title:'移动端列表页虚拟滚动优化', titleEn:'Mobile list virtual scroll optimization', project:'mobile', priority:'high', status:'in-progress', assignee:'zm', points:5, due:'2026-08-09', start:'2026-07-30T09:00', end:'2026-08-09T18:00', createdAt:'2026-07-25T16:00', labels:['frontend','performance'], desc:'优化长列表性能，实现虚拟滚动，目标 FPS > 55。', descEn:'Optimize long list performance with virtual scroll, target FPS > 55.' },
+  { id:'ATL-146', title:'数据看板可视化组件开发', titleEn:'Data dashboard visualization components', project:'data', priority:'medium', status:'backlog', assignee:'zm', points:8, due:'2026-08-15', start:'2026-08-10T09:00', end:'2026-08-15T18:00', createdAt:'2026-07-22T09:00', labels:['frontend','chart'], desc:'开发折线图、柱状图、饼图等可视化组件，支持数据实时更新。', descEn:'Develop line, bar, pie chart components with real-time data updates.' },
+  { id:'ATL-147', title:'设计移动端导航交互方案', titleEn:'Design mobile navigation interaction', project:'mobile', priority:'medium', status:'in-review', assignee:'ln', points:3, due:'2026-08-06', start:'2026-07-31T09:00', end:'2026-08-06T18:00', createdAt:'2026-07-24T10:00', labels:['design','mobile'], desc:'完成底部 Tab 导航和侧滑菜单的交互方案。', descEn:'Complete bottom tab nav and side drawer interaction design.' },
+  { id:'ATL-148', title:'修复时间戳字段 API 超时问题', titleEn:'Fix API timeout on timestamp field', project:'data', priority:'urgent', status:'in-progress', assignee:'wh', points:2, due:'2026-08-04', start:'2026-07-28T14:00', end:'2026-08-04T18:00', createdAt:'2026-07-23T15:00', labels:['bug','backend'], desc:'查询时间戳字段时 API 响应超时，需优化数据库索引和查询逻辑。', descEn:'API timeout when querying timestamp field, optimize DB index and query logic.' },
+  { id:'ATL-149', title:'配置 Nginx 反向代理与负载均衡', titleEn:'Configure Nginx reverse proxy and load balancing', project:'tools', priority:'medium', status:'done', assignee:'ly', points:3, due:'2026-08-02', start:'2026-07-27T09:00', end:'2026-08-02T18:00', createdAt:'2026-07-22T11:00', labels:['devops','nginx'], desc:'配置 Nginx 反向代理，实现多实例负载均衡。', descEn:'Configure Nginx reverse proxy with multi-instance load balancing.' },
+  { id:'ATL-150', title:'编写 API 接口文档', titleEn:'Write API documentation', project:'data', priority:'low', status:'todo', assignee:'wh', points:2, due:'2026-08-12', start:'2026-08-08T09:00', end:'2026-08-12T18:00', createdAt:'2026-07-26T09:00', labels:['docs','api'], desc:'使用 Swagger 编写完整的 API 接口文档。', descEn:'Write complete API documentation using Swagger.' },
+  { id:'ATL-151', title:'移动端推送通知功能开发', titleEn:'Mobile push notification feature', project:'mobile', priority:'high', status:'backlog', assignee:'zm', points:5, due:'2026-08-14', start:'2026-08-11T09:00', end:'2026-08-14T18:00', createdAt:'2026-07-21T09:00', labels:['mobile','feature'], desc:'实现移动端推送通知功能，支持 Android 和 iOS。', descEn:'Implement push notifications for Android and iOS.' },
+  { id:'ATL-152', title:'内部工具权限管理系统', titleEn:'Internal tools permission system', project:'tools', priority:'high', status:'in-progress', assignee:'wh', points:8, due:'2026-08-11', start:'2026-07-30T09:00', end:'2026-08-11T18:00', createdAt:'2026-07-20T09:00', labels:['backend','auth'], desc:'实现基于角色的权限管理系统（RBAC）。', descEn:'Implement role-based access control (RBAC) system.' },
+  { id:'ATL-153', title:'首页响应式适配', titleEn:'Homepage responsive adaptation', project:'website', priority:'medium', status:'todo', assignee:'zm', points:3, due:'2026-08-10', start:'2026-08-05T09:00', end:'2026-08-10T18:00', createdAt:'2026-07-25T13:00', labels:['frontend','responsive'], desc:'完成首页在移动端、平板、桌面端的响应式适配。', descEn:'Complete responsive adaptation for mobile, tablet, desktop.' },
+  { id:'ATL-154', title:'数据平台 ETL 流程优化', titleEn:'Data platform ETL optimization', project:'data', priority:'medium', status:'backlog', assignee:'ly', points:8, due:'2026-08-20', start:'2026-08-13T09:00', end:'2026-08-20T18:00', createdAt:'2026-07-19T09:00', labels:['data','etl'], desc:'优化 ETL 数据处理流程，提升处理速度 50%。', descEn:'Optimize ETL pipeline to improve processing speed by 50%.' },
+  { id:'ATL-155', title:'移动端崩溃率监控接入', titleEn:'Mobile crash rate monitoring', project:'mobile', priority:'urgent', status:'done', assignee:'ly', points:3, due:'2026-08-03', start:'2026-07-26T09:00', end:'2026-08-03T18:00', createdAt:'2026-07-22T14:00', labels:['mobile','monitoring'], desc:'接入 Sentry 进行移动端崩溃监控。', descEn:'Integrate Sentry for mobile crash monitoring.' },
+  { id:'ATL-156', title:'官网 SEO 优化', titleEn:'Website SEO optimization', project:'website', priority:'low', status:'backlog', assignee:'ln', points:3, due:'2026-08-18', start:'2026-08-12T09:00', end:'2026-08-18T18:00', createdAt:'2026-07-18T09:00', labels:['seo','frontend'], desc:'优化页面 Meta 标签、结构化数据、站点地图。', descEn:'Optimize meta tags, structured data, sitemap.' },
+  { id:'ATL-157', title:'编写端到端测试用例', titleEn:'Write E2E test cases', project:'mobile', priority:'medium', status:'todo', assignee:'zx', points:5, due:'2026-08-13', start:'2026-08-06T09:00', end:'2026-08-13T18:00', createdAt:'2026-07-24T16:00', labels:['testing','e2e'], desc:'使用 Playwright 编写核心流程的 E2E 测试。', descEn:'Write E2E tests for core flows using Playwright.' },
+  { id:'ATL-158', title:'数据平台监控告警配置', titleEn:'Data platform monitoring alerts', project:'data', priority:'high', status:'in-review', assignee:'ly', points:3, due:'2026-08-07', start:'2026-08-02T09:00', end:'2026-08-07T18:00', createdAt:'2026-07-23T11:00', labels:['devops','monitoring'], desc:'配置 Prometheus + Grafana 监控告警。', descEn:'Configure Prometheus + Grafana monitoring alerts.' }
+];
+function issueTitle(i){ return lang==='zh' ? i.title : i.titleEn; }
+function issueDesc(i){ return lang==='zh' ? i.desc : i.descEn; }
+
+var MESSAGES = [
+  { id:1, from:'cy', to:'admin', subject:'本周任务分配', body:'管理员你好，本周的任务已分配完成，请查看看板。', time:'2026-08-04T09:30', read:false },
+  { id:2, from:'admin', to:'wh', subject:'OAuth2 进度确认', body:'王浩，OAuth2 的 token 刷新机制是否已经完成？', time:'2026-08-04T10:00', read:false },
+  { id:3, from:'ln', to:'admin', subject:'Hero 设计稿已上传', body:'首页 Hero 区域的交互稿已上传到 Figma，请查收。', time:'2026-08-03T16:45', read:false }
+];
+
+var REVIEWS = [
+  { id:1, issueId:'ATL-142', reviewer:'admin', type:'coordination', content:'此任务紧急，协调张明协助后端联调，优先完成 token 刷新模块', coordinate:'zm', contact:'', time:'2026-08-04T10:30' },
+  { id:2, issueId:'ATL-148', reviewer:'admin', type:'contactCall', content:'API 超时影响生产，电话联系刘洋确认服务器状态，赵雪同步加紧测试', coordinate:'zx', contact:'ly', time:'2026-08-04T11:00' },
+  { id:3, issueId:'ATL-141', reviewer:'admin', type:'guidance', content:'设计稿注意移动端适配，参考移动端 v2.0 的导航交互方案，避免重复设计', coordinate:'', contact:'', time:'2026-08-03T15:00' }
+];
+function getReviews(issueId){
+  var r = [];
+  for(var i=0;i<REVIEWS.length;i++){ if(REVIEWS[i].issueId===issueId) r.push(REVIEWS[i]); }
+  return r;
+}
+function hasReview(issueId){
+  for(var i=0;i<REVIEWS.length;i++){ if(REVIEWS[i].issueId===issueId) return true; }
+  return false;
+}
+function getUrgentPendingReview(){
+  var r = [];
+  for(var i=0;i<ISSUES.length;i++){
+    if(ISSUES[i].priority==='urgent' && ISSUES[i].status!=='done' && !hasReview(ISSUES[i].id)){
+      r.push(ISSUES[i]);
+    }
+  }
+  return r;
+}
+
+/* ========== STATE ========== */
+var currentPage = 'dashboard';
+var editingIssueId = null;
+var viewingIssueId = null;
+var boardProjectFilter = 'all';
+var listPriorityFilter = 'all';
+var selectedProjectColor = '#5B9BF2';
+var searchQuery = '';
+
+/* ========== AUTH ========== */
+function doLogin(){
+  var u = $('login-user').value.trim();
+  var p = $('login-pass').value.trim();
+  if(u === 'admin' && p === 'admin'){
+    $('login-error').style.display = 'none';
+    $('login-screen').style.display = 'none';
+    $('main-app').style.display = 'block';
+    try { sessionStorage.setItem('atlas-auth', JSON.stringify({user:'admin', role:'admin'})); } catch(e){}
+    showToast(t('toast.loginSuccess'));
+    renderAll();
+  } else {
+    $('login-error').style.display = 'block';
+  }
+}
+function doLogout(){
+  try { sessionStorage.removeItem('atlas-auth'); } catch(e){}
+  $('main-app').style.display = 'none';
+  $('login-screen').style.display = 'flex';
+  $('login-pass').value = '';
+  showToast(t('toast.loggedOut'));
+}
+function checkAuth(){
+  try {
+    var a = JSON.parse(sessionStorage.getItem('atlas-auth')||'null');
+    if(a && a.user === 'admin'){
+      $('login-screen').style.display = 'none';
+      $('main-app').style.display = 'block';
+      return true;
+    }
+  } catch(e){}
+  return false;
+}
+
+/* ========== NAVIGATION ========== */
+var NAV_TITLES = {
+  'dashboard': 'nav.dashboard', 'my-issues': 'nav.myIssues', 'inbox': 'nav.inbox',
+  'board': 'nav.board', 'list': 'nav.list', 'team': 'nav.team', 'settings': 'nav.settings'
+};
+function navigate(page){
+  currentPage = page;
+  var pages = document.querySelectorAll('.page');
+  for(var i=0;i<pages.length;i++){ pages[i].classList.remove('active'); }
+  var target = $('page-'+page);
+  if(target) target.classList.add('active');
+  var navs = document.querySelectorAll('.nav-item');
+  for(var i=0;i<navs.length;i++){ navs[i].classList.remove('active'); }
+  var activeNav = document.querySelector('[data-nav="'+page+'"]');
+  if(activeNav) activeNav.classList.add('active');
+  var bc = $('breadcrumb');
+  if(bc) bc.innerHTML = 'Atlas / <span style="color:#E8E8EC;font-weight:600">' + t(NAV_TITLES[page]||'nav.dashboard') + '</span>';
+  closeAllDropdowns();
+}
+
+/* ========== DROPDOWNS ========== */
+function toggleDropdown(id, e){
+  if(e){ e.stopPropagation(); e.preventDefault(); }
+  closeAllDropdowns();
+  var el = $(id);
+  if(el) el.classList.toggle('show');
+}
+function closeAllDropdowns(){
+  var ds = document.querySelectorAll('.dropdown');
+  for(var i=0;i<ds.length;i++){ ds[i].classList.remove('show'); }
+}
+document.addEventListener('click', function(){ closeAllDropdowns(); });
+
+/* ========== I18N APPLY ========== */
+function applyTranslations(){
+  document.documentElement.setAttribute('lang', lang);
+  var els = document.querySelectorAll('[data-i18n]');
+  for(var i=0;i<els.length;i++){
+    var el = els[i];
+    var key = el.getAttribute('data-i18n');
+    var hasChild = false;
+    for(var j=0;j<el.childNodes.length;j++){ if(el.childNodes[j].nodeType===1){ hasChild=true; break; } }
+    if(!hasChild){ el.textContent = t(key); }
+  }
+  var phs = document.querySelectorAll('[data-i18n-placeholder]');
+  for(var i=0;i<phs.length;i++){ phs[i].placeholder = t(phs[i].getAttribute('data-i18n-placeholder')); }
+  var opts = document.querySelectorAll('option[data-i18n]');
+  for(var i=0;i<opts.length;i++){ opts[i].textContent = t(opts[i].getAttribute('data-i18n')); }
+  updateLangButtons();
+}
+function updateLangButtons(){
+  var lzh = $('lang-zh'), len = $('lang-en');
+  if(lzh && len){
+    lzh.style.background = lang==='zh' ? 'rgba(124,111,240,0.15)' : 'transparent';
+    lzh.style.color = lang==='zh' ? '#7C6FF0' : '#6B7079';
+    lzh.style.borderColor = lang==='zh' ? '#7C6FF0' : '#2E2F35';
+    len.style.background = lang==='en' ? 'rgba(124,111,240,0.15)' : 'transparent';
+    len.style.color = lang==='en' ? '#7C6FF0' : '#6B7079';
+    len.style.borderColor = lang==='en' ? '#7C6FF0' : '#2E2F35';
+  }
+  var tzh = $('topbar-lang-zh'), ten = $('topbar-lang-en');
+  if(tzh && ten){
+    tzh.style.color = lang==='zh' ? '#7C6FF0' : '#4A4E55';
+    tzh.style.fontWeight = lang==='zh' ? '700' : '400';
+    ten.style.color = lang==='en' ? '#7C6FF0' : '#4A4E55';
+    ten.style.fontWeight = lang==='en' ? '700' : '400';
+  }
+  var slzh = $('settings-lang-zh'), slen = $('settings-lang-en');
+  if(slzh && slen){
+    slzh.style.background = lang==='zh' ? 'rgba(124,111,240,0.15)' : 'transparent';
+    slzh.style.color = lang==='zh' ? '#7C6FF0' : '#6B7079';
+    slzh.style.borderColor = lang==='zh' ? '#7C6FF0' : '#2E2F35';
+    slen.style.background = lang==='en' ? 'rgba(124,111,240,0.15)' : 'transparent';
+    slen.style.color = lang==='en' ? '#7C6FF0' : '#6B7079';
+    slen.style.borderColor = lang==='en' ? '#7C6FF0' : '#2E2F35';
+  }
+}
+function setLang(l){
+  lang = l;
+  try { localStorage.setItem('atlas-lang', l); } catch(e){}
+  applyTranslations();
+  renderAll();
+  navigate(currentPage);
+}
+
+/* ========== TOAST ========== */
+var toastTimer = null;
+function showToast(msg){
+  var el = $('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2500);
+}
+
+/* ========== UTILS ========== */
+function formatDateShort(s){
+  if(!s) return '';
+  var d = new Date(s);
+  if(isNaN(d.getTime())) return s;
+  if(lang==='zh'){ return (d.getMonth()+1)+'月'+d.getDate()+'日'; }
+  return (d.getMonth()+1)+'/'+d.getDate();
+}
+function formatDateTime(s){
+  if(!s) return '';
+  var d = new Date(s);
+  if(isNaN(d.getTime())) return s;
+  if(lang==='zh'){ return (d.getMonth()+1)+'月'+d.getDate()+'日 '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+  return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function timeAgo(s){
+  if(!s) return '';
+  var d = new Date(s);
+  if(isNaN(d.getTime())) return s;
+  var diff = Math.floor((Date.now() - d.getTime())/60000);
+  if(diff < 0) diff = 0;
+  if(diff < 1) return lang==='zh'?'刚刚':'just now';
+  if(diff < 60) return diff + (lang==='zh'?' 分钟前':' min ago');
+  var h = Math.floor(diff/60);
+  if(h < 24) return h + (lang==='zh'?' 小时前':' hour'+(h>1?'s':'')+' ago');
+  var days = Math.floor(h/24);
+  return days + (lang==='zh'?' 天前':' day'+(days>1?'s':'')+' ago');
+}
+/* ========== DATA PERSISTENCE ========== */
+var STORE_KEY = 'atlas-pm-data';
+function saveData(){
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({
+      issues: ISSUES, reviews: REVIEWS, messages: MESSAGES,
+      projects: PROJECTS, subAccounts: SUB_ACCOUNTS
+    }));
+  } catch(e) { /* storage full or unavailable */ }
+}
+function loadData(){
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if(!raw) return false;
+    var d = JSON.parse(raw);
+    if(d.issues) ISSUES = d.issues;
+    if(d.reviews) REVIEWS = d.reviews;
+    if(d.messages) MESSAGES = d.messages;
+    if(d.projects) PROJECTS = d.projects;
+    if(d.subAccounts) SUB_ACCOUNTS = d.subAccounts;
+    return true;
+  } catch(e) { return false; }
+}
+/* ========== LOOKUP HELPERS (O(1) via Map) ========== */
+var _memberMap = null, _projectMap = null, _issueMap = null;
+function buildLookupMaps(){
+  _memberMap = {};
+  for(var i=0;i<MEMBERS.length;i++) _memberMap[MEMBERS[i].id] = MEMBERS[i];
+  _projectMap = {};
+  for(var i=0;i<PROJECTS.length;i++) _projectMap[PROJECTS[i].id] = PROJECTS[i];
+  _issueMap = {};
+  for(var i=0;i<ISSUES.length;i++) _issueMap[ISSUES[i].id] = ISSUES[i];
+}
+function findMember(id){ return _memberMap ? (_memberMap[id]||null) : null; }
+function findProject(id){ return _projectMap ? (_projectMap[id]||null) : null; }
+function findIssue(id){ return _issueMap ? (_issueMap[id]||null) : null; }
+/* ========== SECURITY: XSS Prevention ========== */
+function escapeHtml(s){
+  if(s===null||s===undefined) return '';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+/* ========== VALIDATION ========== */
+function isValidPhone(s){ return /^1[3-9]\d{9}$/.test(s); }
+function isValidEmail(s){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s); }
+/* ========== TIMESTAMP ========== */
+function genTimestamp(){
+  var n = new Date();
+  return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0')+'T'+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+}
+function getNextId(){
+  var max = 140;
+  for(var i=0;i<ISSUES.length;i++){ var n=parseInt(ISSUES[i].id.replace('ATL-',''),10); if(n>max)max=n; }
+  return 'ATL-'+(max+1);
+}
+function findUserById(id){
+  if(id==='admin') return CURRENT_USER;
+  var m = findMember(id);
+  if(m) return m;
+  for(var i=0;i<SUB_ACCOUNTS.length;i++){ if(SUB_ACCOUNTS[i].id===id) return SUB_ACCOUNTS[i]; }
+  return null;
+}
+/* ========== DEBOUNCE ========== */
+function debounce(fn, wait){
+  var timer = null;
+  return function(){
+    var ctx = this, args = arguments;
+    if(timer) clearTimeout(timer);
+    timer = setTimeout(function(){ fn.apply(ctx, args); }, wait);
+  };
+}
+
+/* ========== RENDER: SIDEBAR PROJECTS ========== */
+function renderSidebarProjects(){
+  var el = $('sidebar-projects');
+  if(!el) return;
+  var html = '';
+  for(var i=0;i<PROJECTS.length;i++){
+    var p = PROJECTS[i];
+    var count = 0;
+    for(var j=0;j<ISSUES.length;j++){ if(ISSUES[j].project===p.id) count++; }
+    html += '<div class="nav-item" onclick="filterBoardByProject(\''+p.id+'\')" style="position:relative;padding:8px 10px;display:flex;align-items:center;gap:8px;font-size:15px;color:#A0A4AD;margin-bottom:2px;cursor:pointer">' +
+      '<div class="nav-indicator"></div>' +
+      '<div style="width:8px;height:8px;border-radius:2px;background:'+p.color+';flex-shrink:0"></div>' +
+      '<span>'+escapeHtml(projName(p))+'</span>' +
+      '<span style="margin-left:auto;font-size:11px;color:#4A4E55">'+count+'</span>' +
+      '</div>';
+  }
+  el.innerHTML = html;
+}
+
+/* ========== RENDER: DASHBOARD ========== */
+function renderDashboard(){
+  var total = ISSUES.length;
+  var done = 0, inProg = 0, overdue = 0;
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  for(var i=0;i<ISSUES.length;i++){
+    if(ISSUES[i].status==='done') done++;
+    if(ISSUES[i].status==='in-progress'||ISSUES[i].status==='in-review') inProg++;
+    if(ISSUES[i].due && ISSUES[i].status!=='done'){
+      var d = new Date(ISSUES[i].due);
+      if(d < today) overdue++;
+    }
+  }
+  var statsEl = $('dash-stats');
+  if(statsEl){
+    var urgentPending = getUrgentPendingReview().length;
+    var stats = [
+      { label:t('dash.totalTasks'), value:total, color:'#E8E8EC', bg:'rgba(124,111,240,0.08)' },
+      { label:t('dash.completed'), value:done, color:'#4CB782', bg:'rgba(76,183,130,0.08)' },
+      { label:t('dash.inProgress'), value:inProg, color:'#7C6FF0', bg:'rgba(124,111,240,0.08)' },
+      { label:t('dash.overdue'), value:overdue, color:'#EF4444', bg:'rgba(239,68,68,0.08)' },
+      { label:t('review.dashPendingReview'), value:urgentPending, color:urgentPending>0?'#EF4444':'#4A4E55', bg:urgentPending>0?'rgba(239,68,68,0.08)':'rgba(74,78,85,0.05)', clickable:urgentPending>0 }
+    ];
+    var html = '';
+    for(var i=0;i<stats.length;i++){
+      var s = stats[i];
+      var clickAttr = s.clickable ? 'onclick="filterList(\'pendingReview\');navigate(\'list\')"style="padding:16px;background:'+s.bg+';cursor:pointer"' : 'style="padding:16px;background:'+s.bg+'"';
+      html += '<div class="card" '+clickAttr+'>' +
+        '<div style="font-size:13px;color:#6B7079;margin-bottom:6px">'+s.label+'</div>' +
+        '<div style="font-size:30px;font-weight:700;color:'+s.color+'">'+s.value+'</div>' +
+        '</div>';
+    }
+    statsEl.innerHTML = html;
+  }
+  var sdEl = $('dash-status');
+  if(sdEl){
+    var html = '';
+    for(var i=0;i<STATUS_ORDER.length;i++){
+      var s = STATUS_ORDER[i];
+      var cnt = 0;
+      for(var j=0;j<ISSUES.length;j++){ if(ISSUES[j].status===s) cnt++; }
+      var pct = total>0 ? Math.round(cnt/total*100) : 0;
+      html += '<div style="margin-bottom:12px">' +
+        '<div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px">' +
+        '<span style="color:#A0A4AD">'+statusLabel(s)+'</span>' +
+        '<span style="color:#6B7079">'+cnt+' ('+pct+'%)</span>' +
+        '</div>' +
+        '<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%;background:'+STATUSES[s].color+'"></div></div>' +
+        '</div>';
+    }
+    sdEl.innerHTML = html;
+  }
+  var actEl = $('dash-activity');
+  if(actEl){
+    var acts = ['activity.1','activity.2','activity.3','activity.4','activity.5'];
+    var avatars = ['王','李','赵','陈','刘'];
+    var colors = ['#F06292','#3DCCC7','#F5A623','#7C6FF0','#4CB782'];
+    var html = '';
+    for(var i=0;i<acts.length;i++){
+      html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:7px 0">' +
+        '<div class="avatar" style="background:'+colors[i]+'">'+avatars[i]+'</div>' +
+        '<div style="flex:1">' +
+        '<div style="font-size:14px;color:#A0A4AD">'+t(acts[i])+'</div>' +
+        '<div style="font-size:12px;color:#4A4E55;margin-top:2px">'+timeAgo(['2026-08-04T10:00','2026-08-04T09:00','2026-08-04T08:00','2026-08-04T07:00','2026-08-04T05:00'][i])+'</div>' +
+        '</div></div>';
+    }
+    actEl.innerHTML = html;
+  }
+}
+
+/* ========== RENDER: BOARD ========== */
+function renderBoard(){
+  var filterEl = $('board-project-filter');
+  if(filterEl){
+    var html = '<div class="filter-btn '+(boardProjectFilter==='all'?'active':'')+'" onclick="filterBoardByProject(\'all\')">'+t('filter.all')+'</div>';
+    for(var i=0;i<PROJECTS.length;i++){
+      html += '<div class="filter-btn '+(boardProjectFilter===PROJECTS[i].id?'active':'')+'" onclick="filterBoardByProject(\''+PROJECTS[i].id+'\')" style="display:flex;align-items:center;gap:4px">'+
+        '<div style="width:6px;height:6px;border-radius:2px;background:'+PROJECTS[i].color+'"></div>'+
+        escapeHtml(projName(PROJECTS[i]))+'</div>';
+    }
+    filterEl.innerHTML = html;
+  }
+  var colsEl = $('board-columns');
+  if(!colsEl) return;
+  var html = '';
+  for(var ci=0;ci<STATUS_ORDER.length;ci++){
+    var status = STATUS_ORDER[ci];
+    var cards = [];
+    for(var j=0;j<ISSUES.length;j++){
+      if(ISSUES[j].status===status && (boardProjectFilter==='all'||ISSUES[j].project===boardProjectFilter)){
+        if(searchQuery){
+          var tl = issueTitle(ISSUES[j]).toLowerCase();
+          if(tl.indexOf(searchQuery.toLowerCase())<0 && ISSUES[j].id.toLowerCase().indexOf(searchQuery.toLowerCase())<0) continue;
+        }
+        cards.push(ISSUES[j]);
+      }
+    }
+    html += '<div style="flex:1;min-width:240px;max-width:320px">' +
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px">' +
+      '<div style="width:6px;height:6px;border-radius:50%;background:'+STATUSES[status].color+'"></div>' +
+      '<span style="font-size:14px;font-weight:600;color:#A0A4AD">'+statusLabel(status)+'</span>' +
+      '<span style="font-size:12px;color:#4A4E55;margin-left:auto">'+cards.length+'</span>' +
+      '</div><div style="display:flex;flex-direction:column;gap:9px">';
+    for(var k=0;k<cards.length;k++){
+      var issue = cards[k];
+      var mem = findMember(issue.assignee), proj = findProject(issue.project);
+      var timeStr = '';
+      if(issue.start && issue.end){ timeStr = formatDateShort(issue.start) + ' – ' + formatDateShort(issue.end); }
+      else if(issue.due){ timeStr = formatDateShort(issue.due); }
+      var reviewed = hasReview(issue.id);
+      var cardBorder = (issue.priority==='urgent' && !reviewed && issue.status!=='done') ? 'border-left:3px solid #EF4444;' : '';
+      var titleEsc = escapeHtml(issueTitle(issue));
+      html += '<div class="kanban-card" onclick="openIssueDetail(\''+issue.id+'\')" style="'+cardBorder+'">' +
+        '<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px">' +
+        '<span style="font-size:11px;font-weight:600;color:#7C6FF0;font-family:monospace">'+issue.id+'</span>' +
+        (reviewed?'<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#4CB78220;color:#4CB782;font-weight:600">✓ '+t('review.reviewed')+'</span>':'') +
+        '<div class="priority-dot" style="background:'+PRIORITIES[issue.priority].color+';margin-left:auto"></div>' +
+        '</div>' +
+        '<div style="font-size:15px;color:#E8E8EC;line-height:1.45;margin-bottom:8px">'+titleEsc+'</div>' +
+        '<div style="font-size:12px;color:#6B7079;margin-bottom:8px">'+timeStr+'</div>' +
+        '<div style="display:flex;align-items:center;gap:6px">' +
+        (proj?'<div style="display:flex;align-items:center;gap:3px"><div style="width:6px;height:6px;border-radius:2px;background:'+proj.color+'"></div><span style="font-size:11px;color:#6B7079">'+projName(proj)+'</span></div>':'') +
+        '<div style="margin-left:auto;display:flex;align-items:center;gap:4px">' +
+        (issue.points?'<span style="font-size:11px;color:#4A4E55;font-family:monospace">'+issue.points+'pt</span>':'') +
+        (mem?'<div class="avatar" style="width:22px;height:22px;font-size:10px;background:'+mem.color+'">'+(lang==='zh'?mem.avatar:mem.avEn)+'</div>':'') +
+        '</div></div></div>';
+    }
+    html += '</div></div>';
+  }
+  colsEl.innerHTML = html;
+}
+function filterBoardByProject(pid){
+  boardProjectFilter = pid;
+  navigate('board');
+  renderBoard();
+}
+
+/* ========== RENDER: LIST ========== */
+function renderList(){
+  var filterEl = $('list-filters');
+  if(filterEl){
+    var filters = ['all','urgent','high','medium','low'];
+    var html = '';
+    for(var i=0;i<filters.length;i++){
+      html += '<div class="filter-btn '+(listPriorityFilter===filters[i]?'active':'')+'" onclick="filterList(\''+filters[i]+'\')">'+t('filter.'+filters[i])+'</div>';
+    }
+    html += '<div style="width:1px;background:#2E2F35;margin:0 4px"></div>';
+    html += '<div class="filter-btn '+(listPriorityFilter==='pendingReview'?'active':'')+'" onclick="filterList(\'pendingReview\')" style="color:'+(listPriorityFilter==='pendingReview'?'#EF4444':'#6B7079')+'">'+t('review.pendingOnly')+'</div>';
+    filterEl.innerHTML = html;
+  }
+  var tbody = $('list-tbody');
+  if(!tbody) return;
+  var html = '';
+  var count = 0;
+  for(var i=0;i<ISSUES.length;i++){
+    var issue = ISSUES[i];
+    if(searchQuery){
+      var sl = issueTitle(issue).toLowerCase();
+      if(sl.indexOf(searchQuery.toLowerCase())<0 && issue.id.toLowerCase().indexOf(searchQuery.toLowerCase())<0) continue;
+    }
+    if(listPriorityFilter==='pendingReview'){
+      if(issue.status==='done' || hasReview(issue.id)) continue;
+    } else if(listPriorityFilter!=='all' && issue.priority!==listPriorityFilter) continue;
+    count++;
+    var mem = findMember(issue.assignee), proj = findProject(issue.project);
+    var timeStr = '';
+    if(issue.start && issue.end){ timeStr = formatDateShort(issue.start) + ' – ' + formatDateShort(issue.end); }
+    var reviewed = hasReview(issue.id);
+    var isUrgentUnreviewed = (issue.priority==='urgent' && !reviewed && issue.status!=='done');
+    var reviewBadge = '';
+    if(reviewed){
+      reviewBadge = '<span class="badge" style="background:#4CB78220;color:#4CB782">'+t('review.reviewed')+'</span>';
+    } else if(issue.priority==='urgent' && issue.status!=='done'){
+      reviewBadge = '<span class="badge urgent-pulse" style="background:#EF444420;color:#EF4444">'+t('review.urgentPending')+'</span>';
+    } else {
+      reviewBadge = '<span class="badge" style="background:#2E2F35;color:#6B7079">'+t('review.pending')+'</span>';
+    }
+    var rowClass = isUrgentUnreviewed ? 'review-urgent-row' : '';
+    var titleEsc = escapeHtml(issueTitle(issue));
+    html += '<tr class="'+rowClass+'" onclick="openIssueDetail(\''+issue.id+'\')" style="cursor:pointer">' +
+      '<td><div class="checkbox '+(issue.status==='done'?'checked':'')+'"></div></td>' +
+      '<td style="font-family:monospace;font-size:12px;color:#7C6FF0;font-weight:600">'+issue.id+'</td>' +
+      '<td style="color:#E8E8EC">'+titleEsc+'</td>' +
+      '<td><div style="display:flex;align-items:center;gap:4px"><div style="width:6px;height:6px;border-radius:2px;background:'+(proj?proj.color:'#666')+'"></div><span style="font-size:12px;color:#6B7079">'+(proj?projName(proj):'')+'</span></div></td>' +
+      '<td><span class="badge" style="background:'+PRIORITIES[issue.priority].color+'20;color:'+PRIORITIES[issue.priority].color+'">'+priLabel(issue.priority)+'</span></td>' +
+      '<td><span class="badge" style="background:'+STATUSES[issue.status].color+'20;color:'+STATUSES[issue.status].color+'">'+statusLabel(issue.status)+'</span></td>' +
+      '<td><div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:22px;height:22px;font-size:10px;background:'+(mem?mem.color:'#666')+'">'+(mem?(lang==='zh'?mem.avatar:mem.avEn):'?')+'</div><span style="font-size:13px;color:#6B7079">'+(mem?memName(mem):'')+'</span></div></td>' +
+      '<td style="font-family:monospace;color:#6B7079">'+issue.points+'</td>' +
+      '<td style="color:#6B7079;font-size:12px">'+formatDateShort(issue.due)+'</td>' +
+      '<td style="color:#6B7079;font-size:12px">'+timeStr+'</td>' +
+      '<td>'+reviewBadge+'</td>' +
+      '</tr>';
+  }
+  tbody.innerHTML = html;
+  var cntEl = $('list-count');
+  if(cntEl) cntEl.textContent = count + (lang==='zh'?' 个任务':' issues');
+}
+function filterList(p){
+  listPriorityFilter = p;
+  renderList();
+}
+
+/* ========== RENDER: MY ISSUES ========== */
+function renderMyIssues(){
+  var el = $('my-issues-list');
+  if(!el) return;
+  var html = '';
+  var myCount = 0;
+  var searchQ = (searchQuery||'').toLowerCase();
+  for(var i=0;i<ISSUES.length;i++){
+    var issue = ISSUES[i];
+    if(issue.assignee !== CURRENT_USER.id && issue.assignee !== 'cy') continue;
+    if(searchQ){
+      var titleLc = issueTitle(issue).toLowerCase();
+      if(titleLc.indexOf(searchQ)<0 && issue.id.toLowerCase().indexOf(searchQ)<0) continue;
+    }
+    myCount++;
+    var proj = findProject(issue.project);
+    var timeStr = '';
+    if(issue.start && issue.end){ timeStr = formatDateShort(issue.start) + ' – ' + formatDateShort(issue.end); }
+    var titleEsc = escapeHtml(issueTitle(issue));
+    html += '<div class="card" style="padding:16px;margin-bottom:10px;cursor:pointer" onclick="openIssueDetail(\''+issue.id+'\')">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+      '<span style="font-family:monospace;font-size:12px;color:#7C6FF0;font-weight:600">'+issue.id+'</span>' +
+      '<div class="priority-dot" style="background:'+PRIORITIES[issue.priority].color+'"></div>' +
+      '<span class="badge" style="background:'+STATUSES[issue.status].color+'20;color:'+STATUSES[issue.status].color+';margin-left:auto">'+statusLabel(issue.status)+'</span>' +
+      '</div>' +
+      '<div style="font-size:15px;color:#E8E8EC;margin-bottom:6px">'+titleEsc+'</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#6B7079">' +
+      (proj?'<div style="display:flex;align-items:center;gap:3px"><div style="width:6px;height:6px;border-radius:2px;background:'+proj.color+'"></div>'+projName(proj)+'</div>':'') +
+      '<span>·</span><span>'+timeStr+'</span><span>·</span><span>'+issue.points+'pt</span>' +
+      '</div></div>';
+  }
+  if(html === ''){ html = '<div style="text-align:center;padding:40px;color:#4A4E55;font-size:15px">'+(lang==='zh'?'暂无分配给你的任务':'No issues assigned to you')+'</div>'; }
+  el.innerHTML = html;
+  var sbm = $('sidebar-my-count');
+  if(sbm) sbm.textContent = myCount;
+}
+
+/* ========== RENDER: INBOX ========== */
+function renderInbox(){
+  var el = $('inbox-list');
+  if(!el) return;
+  var html = '';
+  var unread = 0;
+  for(var i=MESSAGES.length-1;i>=0;i--){
+    var msg = MESSAGES[i];
+    if(msg.to === 'admin' && !msg.read) unread++;
+    var fromUser = findUserById(msg.from);
+    var fromName = fromUser ? (lang==='zh' ? fromUser.name : (fromUser.nameEn || fromUser.name)) : msg.from;
+    var subjEsc = escapeHtml(msg.subject);
+    var bodyEsc = escapeHtml(msg.body.substring(0,80)+(msg.body.length>80?'…':''));
+    html += '<div class="card" style="padding:16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;cursor:pointer" onclick="openMessage('+msg.id+')">' +
+      '<div class="avatar" style="background:'+(fromUser?fromUser.color:'#7C6FF0')+';width:34px;height:34px;font-size:13px">'+(fromUser?(lang==='zh'?fromUser.avatar:'A'):'A')+'</div>' +
+      '<div style="flex:1">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+      '<div style="font-size:15px;font-weight:600;color:#E8E8EC">'+(msg.to==='admin'?'':'Re: ')+subjEsc+'</div>' +
+      '<span style="font-size:12px;color:#4A4E55">'+timeAgo(msg.time)+'</span>' +
+      '</div>' +
+      '<div style="font-size:14px;color:#A0A4AD;margin-bottom:4px">' + escapeHtml(fromName) + ' · ' + bodyEsc + '</div>' +
+      '<div style="font-size:12px;color:'+(msg.to==='admin'?'#EF4444':'#4CB782')+'">'+(msg.to==='admin'?(lang==='zh'?'收件':'Inbox'):(lang==='zh'?'已发送':'Sent'))+'</div>' +
+      '</div></div>';
+  }
+  el.innerHTML = html;
+  var sbi = $('sidebar-inbox-count');
+  if(sbi) sbi.textContent = unread;
+}
+function openMessage(id){
+  for(var i=0;i<MESSAGES.length;i++){ if(MESSAGES[i].id===id){ MESSAGES[i].read=true; saveData(); break; } }
+  renderInbox();
+  showToast(lang==='zh'?'邮件已标记为已读':'Message marked as read');
+}
+
+/* ========== RENDER: TEAM ========== */
+function renderTeam(){
+  var el = $('team-grid');
+  if(!el) return;
+  var html = '';
+  for(var i=0;i<MEMBERS.length;i++){
+    var m = MEMBERS[i];
+    var count = 0, done = 0;
+    for(var j=0;j<ISSUES.length;j++){
+      if(ISSUES[j].assignee===m.id){ count++; if(ISSUES[j].status==='done') done++; }
+    }
+    var projColors = [];
+    for(var j=0;j<PROJECTS.length;j++){
+      for(var k=0;k<ISSUES.length;k++){
+        if(ISSUES[k].assignee===m.id && ISSUES[k].project===PROJECTS[j].id){
+          projColors.push(PROJECTS[j].color); break;
+        }
+      }
+    }
+    var projDots = '';
+    for(var j=0;j<projColors.length;j++){ projDots += '<div style="width:8px;height:8px;border-radius:2px;background:'+projColors[j]+'"></div>'; }
+    html += '<div class="card" style="padding:18px">' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">' +
+      '<div class="avatar" style="background:'+m.color+';width:40px;height:40px;font-size:15px">'+(lang==='zh'?m.avatar:m.avEn)+'</div>' +
+      '<div><div style="font-size:16px;font-weight:600;color:#E8E8EC">'+memName(m)+'</div><div style="font-size:13px;color:#6B7079">'+memRole(m)+'</div></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:4px;margin-bottom:12px">'+projDots+'</div>' +
+      '<div style="display:flex;justify-content:space-between;font-size:13px">' +
+      '<span style="color:#6B7079">'+(lang==='zh'?'任务':'Issues')+': '+count+'</span>' +
+      '<span style="color:#4CB782">'+(lang==='zh'?'已完成':'Done')+': '+done+'</span>' +
+      '</div></div>';
+  }
+  el.innerHTML = html;
+
+  var subEl = $('subaccount-grid');
+  if(subEl){
+    var sh = '';
+    for(var i=0;i<SUB_ACCOUNTS.length;i++){
+      var s = SUB_ACCOUNTS[i];
+      var perms = [];
+      for(var j=0;j<s.permissions.length;j++){ perms.push(t('perm.'+s.permissions[j])); }
+      sh += '<div class="card" style="padding:16px">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">' +
+        '<div class="avatar" style="background:'+s.color+';width:36px;height:36px;font-size:14px">'+(lang==='zh'?s.name.charAt(0):s.nameEn.charAt(0))+'</div>' +
+        '<div style="flex:1"><div style="font-size:15px;font-weight:600;color:#E8E8EC">'+escapeHtml(subName(s))+'</div><div style="font-size:12px;color:#6B7079">'+escapeHtml(s.phone)+'</div></div>' +
+        '</div>' +
+        '<div style="font-size:13px;color:#A0A4AD;margin-bottom:4px">'+escapeHtml(s.email||'-')+'</div>' +
+        '<div style="font-size:12px;color:#6B7079;margin-bottom:10px">'+escapeHtml(s.dept||(lang==='zh'?'未分配部门':'No department'))+'</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:4px">';
+      for(var j=0;j<perms.length;j++){
+        sh += '<span class="badge" style="background:#7C6FF020;color:#7C6FF0">'+perms[j]+'</span>';
+      }
+      sh += '</div></div>';
+    }
+    subEl.innerHTML = sh;
+  }
+}
+
+/* ========== MODAL: ISSUE (NEW/EDIT) ========== */
+function populateIssueModalSelects(){
+  var projSel = $('modal-project');
+  if(projSel){
+    var ph = '';
+    for(var i=0;i<PROJECTS.length;i++){ ph += '<option value="'+PROJECTS[i].id+'">'+projName(PROJECTS[i])+'</option>'; }
+    projSel.innerHTML = ph;
+  }
+  var asgSel = $('modal-assignee');
+  if(asgSel){
+    var ah = '<option value="admin">'+(lang==='zh'?'管理员':'Administrator')+'</option>';
+    for(var i=0;i<MEMBERS.length;i++){ ah += '<option value="'+MEMBERS[i].id+'">'+memName(MEMBERS[i])+'</option>'; }
+    asgSel.innerHTML = ah;
+  }
+}
+function openIssueModal(issueId){
+  populateIssueModalSelects();
+  if(issueId){
+    editingIssueId = issueId;
+    var issue = null;
+    for(var i=0;i<ISSUES.length;i++){ if(ISSUES[i].id===issueId){ issue=ISSUES[i]; break; } }
+    if(issue){
+      $('modal-title').textContent = t('modal.editTitle');
+      $('modal-name').value = issueTitle(issue);
+      $('modal-project').value = issue.project;
+      $('modal-assignee').value = issue.assignee;
+      $('modal-priority').value = issue.priority;
+      $('modal-status').value = issue.status;
+      $('modal-points').value = issue.points;
+      $('modal-due').value = issue.due || '';
+      $('modal-start').value = issue.start || '';
+      $('modal-end').value = issue.end || '';
+      $('modal-labels').value = (issue.labels||[]).join(', ');
+      $('modal-desc').value = issueDesc(issue);
+    }
+  } else {
+    editingIssueId = null;
+    $('modal-title').textContent = t('modal.newTitle');
+    $('modal-name').value = '';
+    $('modal-points').value = '3';
+    $('modal-due').value = '';
+    $('modal-start').value = '';
+    $('modal-end').value = '';
+    $('modal-labels').value = '';
+    $('modal-desc').value = '';
+    if(PROJECTS.length>0) $('modal-project').value = PROJECTS[0].id;
+    if(MEMBERS.length>0) $('modal-assignee').value = MEMBERS[0].id;
+    $('modal-priority').value = 'medium';
+    $('modal-status').value = 'todo';
+  }
+  $('issue-modal').classList.add('show');
+}
+function closeIssueModal(){
+  $('issue-modal').classList.remove('show');
+  editingIssueId = null;
+}
+function saveIssue(){
+  var name = $('modal-name').value.trim();
+  if(!name){ showToast(lang==='zh'?'请输入任务标题':'Please enter a title'); return; }
+  var labelsStr = $('modal-labels').value.trim();
+  var labels = labelsStr ? labelsStr.split(',').map(function(s){return s.trim();}).filter(function(s){return s;}) : [];
+  if(editingIssueId){
+    for(var i=0;i<ISSUES.length;i++){
+      if(ISSUES[i].id===editingIssueId){
+        ISSUES[i].title = name;
+        ISSUES[i].titleEn = name;
+        ISSUES[i].project = $('modal-project').value;
+        ISSUES[i].assignee = $('modal-assignee').value;
+        ISSUES[i].priority = $('modal-priority').value;
+        ISSUES[i].status = $('modal-status').value;
+        ISSUES[i].points = parseInt($('modal-points').value,10)||0;
+        ISSUES[i].due = $('modal-due').value || '';
+        ISSUES[i].start = $('modal-start').value || '';
+        ISSUES[i].end = $('modal-end').value || '';
+        ISSUES[i].labels = labels;
+        ISSUES[i].desc = $('modal-desc').value;
+        ISSUES[i].descEn = $('modal-desc').value;
+        break;
+      }
+    }
+    showToast(t('toast.updated'));
+    saveData();
+  } else {
+    var newIssue = {
+      id: getNextId(),
+      title: name, titleEn: name,
+      project: $('modal-project').value,
+      assignee: $('modal-assignee').value,
+      priority: $('modal-priority').value,
+      status: $('modal-status').value,
+      points: parseInt($('modal-points').value,10)||0,
+      due: $('modal-due').value || '',
+      start: $('modal-start').value || '',
+      end: $('modal-end').value || '',
+      createdAt: genTimestamp(),
+      labels: labels,
+      desc: $('modal-desc').value,
+      descEn: $('modal-desc').value
+    };
+    ISSUES.push(newIssue);
+    buildLookupMaps();
+    saveData();
+    showToast(t('toast.created'));
+  }
+  closeIssueModal();
+  renderAll();
+}
+
+/* ========== MODAL: ISSUE DETAIL ========== */
+function openIssueDetail(issueId){
+  var issue = findIssue(issueId);
+  if(!issue) return;
+  viewingIssueId = issueId;
+  $('detail-id').textContent = issue.id;
+  $('detail-title').textContent = issueTitle(issue);
+  var mem = findMember(issue.assignee), proj = findProject(issue.project);
+  var metaHtml = '';
+  if(proj) metaHtml += '<span class="badge" style="background:'+proj.color+'20;color:'+proj.color+'">'+escapeHtml(projName(proj))+'</span>';
+  metaHtml += '<span class="badge" style="background:'+PRIORITIES[issue.priority].color+'20;color:'+PRIORITIES[issue.priority].color+'">'+priLabel(issue.priority)+'</span>';
+  metaHtml += '<span class="badge" style="background:'+STATUSES[issue.status].color+'20;color:'+STATUSES[issue.status].color+'">'+statusLabel(issue.status)+'</span>';
+  if(issue.points) metaHtml += '<span class="badge" style="background:#222327;color:#6B7079">'+issue.points+'pt</span>';
+  if(mem) metaHtml += '<span class="badge" style="background:'+mem.color+'20;color:'+mem.color+'">'+escapeHtml(memName(mem))+'</span>';
+  $('detail-meta').innerHTML = metaHtml;
+  $('detail-desc').textContent = issueDesc(issue) || (lang==='zh'?'暂无描述':'No description');
+  var timeHtml = '';
+  if(issue.createdAt) timeHtml += '<div style="margin-bottom:4px"><span style="color:#4A4E55">'+t('time.created')+':</span> '+formatDateTime(issue.createdAt)+'</div>';
+  if(issue.start) timeHtml += '<div style="margin-bottom:4px"><span style="color:#4A4E55">'+t('time.start')+':</span> '+formatDateTime(issue.start)+'</div>';
+  if(issue.end) timeHtml += '<div style="margin-bottom:4px"><span style="color:#4A4E55">'+t('time.end')+':</span> '+formatDateTime(issue.end)+'</div>';
+  if(issue.due) timeHtml += '<div style="margin-bottom:4px"><span style="color:#4A4E55">'+t('time.due')+':</span> '+formatDateShort(issue.due)+'</div>';
+  $('detail-time').innerHTML = timeHtml;
+  var moveHtml = '';
+  for(var i=0;i<STATUS_ORDER.length;i++){
+    var s = STATUS_ORDER[i];
+    if(s===issue.status) continue;
+    moveHtml += '<button onclick="moveIssue(\''+issue.id+'\',\''+s+'\')" class="btn-ghost" style="font-size:13px;padding:6px 12px">'+statusLabel(s)+'</button>';
+  }
+  $('detail-move').innerHTML = moveHtml;
+  /* Populate review dropdowns */
+  var coordSel = $('review-coordinate');
+  var contactSel = $('review-contact');
+  var optsHtml = '<option value="">—</option>';
+  for(var i=0;i<MEMBERS.length;i++){ optsHtml += '<option value="'+MEMBERS[i].id+'">'+memName(MEMBERS[i])+'</option>'; }
+  if(coordSel) coordSel.innerHTML = optsHtml;
+  if(contactSel) contactSel.innerHTML = optsHtml;
+  if($('review-type')) $('review-type').value = 'guidance';
+  if($('review-content')) $('review-content').value = '';
+  /* Render review history */
+  var reviews = getReviews(issueId);
+  var revEl = $('detail-reviews');
+  if(revEl){
+    if(reviews.length === 0){
+      revEl.innerHTML = '<div style="font-size:13px;color:#4A4E55;padding:8px 0">'+t('review.noHistory')+'</div>';
+    } else {
+      var rh = '';
+      for(var i=0;i<reviews.length;i++){
+        var rv = reviews[i];
+        var reviewer = findUserById(rv.reviewer);
+        var typeColors = { guidance:'#5B9BF2', coordination:'#F5A623', contactCall:'#EF4444', approval:'#4CB782' };
+        var typeLabels = { guidance:t('review.guidance'), coordination:t('review.coordination'), contactCall:t('review.contactCall'), approval:t('review.approval') };
+        var rvAvatar = reviewer ? (lang==='zh'?reviewer.avatar:reviewer.avEn) : 'A';
+        var rvColor = reviewer ? reviewer.color : '#7C6FF0';
+        var rvName = reviewer ? (lang==='zh'?reviewer.name:reviewer.nameEn) : 'Admin';
+        rh += '<div class="review-item">' +
+          '<div class="review-avatar" style="background:'+rvColor+'">'+rvAvatar+'</div>' +
+          '<div style="flex:1">' +
+          '<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">' +
+          '<span class="review-type-badge" style="background:'+typeColors[rv.type]+'20;color:'+typeColors[rv.type]+'">'+typeLabels[rv.type]+'</span>' +
+          '<span style="font-size:13px;font-weight:600;color:#E8E8EC">'+rvName+'</span>' +
+          '<span style="font-size:11px;color:#4A4E55;margin-left:auto">'+formatDateTime(rv.time)+'</span>' +
+          '</div>' +
+          '<div style="font-size:14px;color:#A0A4AD;line-height:1.6;margin-bottom:6px">'+escapeHtml(rv.content)+'</div>';
+        if(rv.coordinate){
+          var cm = findUserById(rv.coordinate);
+          if(cm) rh += '<div style="font-size:12px;color:#F5A623;margin-bottom:3px">▸ '+t('review.coordinatePrefix')+': '+memName(cm)+(cm.phone?' · '+cm.phone:'')+'</div>';
+        }
+        if(rv.contact){
+          var ctm = findUserById(rv.contact);
+          if(ctm) rh += '<div style="font-size:12px;color:#EF4444">☎ '+t('review.contactPrefix')+': '+memName(ctm)+(ctm.phone?' · '+ctm.phone:'')+'</div>';
+        }
+        rh += '</div></div>';
+      }
+      revEl.innerHTML = rh;
+    }
+  }
+  $('issue-detail').classList.add('show');
+}
+function closeIssueDetail(){
+  $('issue-detail').classList.remove('show');
+  viewingIssueId = null;
+}
+function moveIssue(issueId, newStatus){
+  for(var i=0;i<ISSUES.length;i++){
+    if(ISSUES[i].id===issueId){ ISSUES[i].status = newStatus; saveData(); break; }
+  }
+  renderAll();
+  if(viewingIssueId===issueId) openIssueDetail(issueId);
+}
+function editCurrentIssue(){
+  if(!viewingIssueId) return;
+  var id = viewingIssueId;
+  closeIssueDetail();
+  openIssueModal(id);
+}
+function deleteCurrentIssue(){
+  if(!viewingIssueId) return;
+  var issue = findIssue(viewingIssueId);
+  var issueName = issue ? issueTitle(issue) : viewingIssueId;
+  showConfirm(
+    lang==='zh'?'删除任务':'Delete Issue',
+    lang==='zh'?'确定要删除 '+viewingIssueId+'「'+issueName+'」吗？此操作不可撤销。':'Are you sure you want to delete '+viewingIssueId+' "'+issueName+'"? This cannot be undone.',
+    function(){
+      for(var i=0;i<ISSUES.length;i++){
+        if(ISSUES[i].id===viewingIssueId){ ISSUES.splice(i,1); buildLookupMaps(); saveData(); break; }
+      }
+      closeIssueDetail();
+      showToast(t('toast.deleted'));
+      renderAll();
+    }
+  );
+}
+
+/* ========== REVIEW: SUBMIT ========== */
+function submitReview(){
+  if(!viewingIssueId) return;
+  var content = $('review-content').value.trim();
+  if(!content){ showToast(lang==='zh'?'请输入批复意见':'Please enter review comment'); return; }
+  var type = $('review-type').value;
+  var coordinate = $('review-coordinate').value;
+  var contact = $('review-contact').value;
+  var now = new Date();
+  var ts = genTimestamp();
+  var newId = REVIEWS.length > 0 ? REVIEWS[REVIEWS.length-1].id + 1 : 1;
+  REVIEWS.push({
+    id: newId,
+    issueId: viewingIssueId,
+    reviewer: 'admin',
+    type: type,
+    content: content,
+    coordinate: coordinate,
+    contact: contact,
+    time: ts
+  });
+  saveData();
+  if(coordinate || contact){
+    showToast(t('review.toastCoordSent'));
+  } else {
+    showToast(t('review.toastSubmitted'));
+  }
+  openIssueDetail(viewingIssueId);
+  renderAll();
+}
+
+/* ========== MODAL: NEW PROJECT ========== */
+function openProjectModal(){
+  $('project-name').value = '';
+  $('project-key').value = '';
+  $('project-desc').value = '';
+  selectedProjectColor = '#5B9BF2';
+  var btns = document.querySelectorAll('.project-color-btn');
+  for(var i=0;i<btns.length;i++){ btns[i].style.borderColor = 'transparent'; }
+  if(btns.length>0) btns[0].style.borderColor = '#E8E8EC';
+  $('project-modal').classList.add('show');
+}
+function closeProjectModal(){
+  $('project-modal').classList.remove('show');
+}
+function selectProjectColor(color){
+  selectedProjectColor = color;
+  var btns = document.querySelectorAll('.project-color-btn');
+  for(var i=0;i<btns.length;i++){
+    btns[i].style.borderColor = 'transparent';
+    if(btns[i].style.background === color || btns[i].style.backgroundColor === color){
+      btns[i].style.borderColor = '#E8E8EC';
+    }
+  }
+}
+function saveProject(){
+  var name = $('project-name').value.trim();
+  if(!name){ showToast(lang==='zh'?'请输入项目名称':'Please enter project name'); return; }
+  var key = ($('project-key').value.trim() || name.substring(0,3)).toUpperCase();
+  var newProj = {
+    id: 'proj-'+Date.now(),
+    key: key,
+    name: name,
+    nameEn: name,
+    color: selectedProjectColor
+  };
+  PROJECTS.push(newProj);
+  buildLookupMaps();
+  saveData();
+  closeProjectModal();
+  showToast(t('toast.projectCreated'));
+  renderAll();
+}
+
+/* ========== MODAL: SUB ACCOUNT ========== */
+function openSubAccountModal(){
+  $('sub-phone').value = '';
+  $('sub-name').value = '';
+  $('sub-email').value = '';
+  $('sub-dept').value = '';
+  var cbs = document.querySelectorAll('.sub-perm');
+  for(var i=0;i<cbs.length;i++){ cbs[i].checked = false; }
+  $('subaccount-modal').classList.add('show');
+}
+function closeSubAccountModal(){
+  $('subaccount-modal').classList.remove('show');
+}
+function saveSubAccount(){
+  var phone = $('sub-phone').value.trim();
+  var name = $('sub-name').value.trim();
+  if(!phone){ showToast(lang==='zh'?'请输入手机号码':'Phone is required'); return; }
+  if(!isValidPhone(phone)){ showToast(lang==='zh'?'手机号码格式不正确':'Invalid phone format (e.g. 13800000000)'); return; }
+  if(!name){ showToast(lang==='zh'?'请输入姓名':'Name is required'); return; }
+  var emailVal = $('sub-email').value.trim();
+  if(emailVal && !isValidEmail(emailVal)){ showToast(lang==='zh'?'邮箱格式不正确':'Invalid email format'); return; }
+  var perms = [];
+  var cbs = document.querySelectorAll('.sub-perm');
+  for(var i=0;i<cbs.length;i++){ if(cbs[i].checked) perms.push(cbs[i].value); }
+  var colors = ['#7C6FF0','#5B9BF2','#F06292','#3DCCC7','#F5A623','#4CB782'];
+  var newSub = {
+    id: 'sub-'+Date.now(),
+    phone: phone,
+    name: name,
+    nameEn: name,
+    email: emailVal,
+    dept: $('sub-dept').value.trim(),
+    permissions: perms,
+    color: colors[SUB_ACCOUNTS.length % colors.length]
+  };
+  SUB_ACCOUNTS.push(newSub);
+  saveData();
+  closeSubAccountModal();
+  showToast(t('toast.subAccountCreated'));
+  renderAll();
+}
+
+/* ========== MODAL: COMPOSE MESSAGE ========== */
+function openComposeModal(){
+  var toSel = $('compose-to');
+  if(toSel){
+    var html = '<option value="admin">'+(lang==='zh'?'管理员':'Administrator')+'</option>';
+    for(var i=0;i<SUB_ACCOUNTS.length;i++){
+      html += '<option value="'+SUB_ACCOUNTS[i].id+'">'+subName(SUB_ACCOUNTS[i])+'</option>';
+    }
+    toSel.innerHTML = html;
+  }
+  $('compose-subject').value = '';
+  $('compose-body').value = '';
+  $('compose-modal').classList.add('show');
+}
+function closeComposeModal(){
+  $('compose-modal').classList.remove('show');
+}
+function sendMessage(){
+  var to = $('compose-to').value;
+  var subject = $('compose-subject').value.trim();
+  var body = $('compose-body').value.trim();
+  if(!subject){ showToast(lang==='zh'?'请输入主题':'Subject is required'); return; }
+  if(!body){ showToast(lang==='zh'?'请输入内容':'Body is required'); return; }
+  var ts = genTimestamp();
+  var msg = {
+    id: MESSAGES.length > 0 ? MESSAGES[MESSAGES.length-1].id + 1 : 1,
+    from: 'admin',
+    to: to,
+    subject: subject,
+    body: body,
+    time: ts,
+    read: true
+  };
+  MESSAGES.push(msg);
+  saveData();
+  closeComposeModal();
+  showToast(t('toast.messageSent'));
+  renderInbox();
+}
+
+/* ========== SEARCH ========== */
+function initSearch(){
+  var el = $('search-input');
+  if(!el) return;
+  var handler = debounce(function(){
+    searchQuery = el.value.trim();
+    renderBoard();
+    renderList();
+    renderMyIssues();
+    if(currentPage === 'list' || currentPage === 'board' || currentPage === 'my-issues'){
+      /* stay on current page */
+    } else {
+      navigate('list');
+    }
+  }, 250);
+  el.addEventListener('input', handler);
+}
+function clearSearch(){
+  searchQuery = '';
+  var el = $('search-input');
+  if(el) el.value = '';
+  renderAll();
+}
+
+/* ========== KEYBOARD SHORTCUTS ========== */
+function initKeyboardShortcuts(){
+  document.addEventListener('keydown', function(e){
+    /* ESC: close any open modal */
+    if(e.key === 'Escape'){
+      var modals = document.querySelectorAll('.modal-bg.show');
+      if(modals.length > 0){
+        modals[modals.length-1].classList.remove('show');
+        e.preventDefault();
+        return;
+      }
+    }
+    /* Enter on login screen */
+    if(e.key === 'Enter' && $('login-screen').style.display !== 'none'){
+      doLogin();
+      e.preventDefault();
+      return;
+    }
+    /* Ctrl/Cmd+K: focus search */
+    if((e.ctrlKey || e.metaKey) && e.key === 'k'){
+      e.preventDefault();
+      var si = $('search-input');
+      if(si){ si.focus(); si.select(); }
+      return;
+    }
+    /* N: new issue (when not typing in input) */
+    if(e.key === 'n' && !isTypingInInput(e.target)){
+      e.preventDefault();
+      openIssueModal();
+      return;
+    }
+    /* C: compose message (when on inbox page and not typing) */
+    if(e.key === 'c' && currentPage === 'inbox' && !isTypingInInput(e.target)){
+      e.preventDefault();
+      openComposeModal();
+      return;
+    }
+  });
+}
+function isTypingInInput(target){
+  if(!target) return false;
+  var tag = target.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
+}
+
+/* ========== RESET DATA ========== */
+function resetData(){
+  showConfirm(
+    lang==='zh'?'重置数据':'Reset Data',
+    lang==='zh'?'确定要清除所有本地数据并恢复初始状态吗？此操作不可撤销。':'Are you sure you want to clear all local data and restore initial state? This cannot be undone.',
+    function(){
+      try { localStorage.removeItem(STORE_KEY); } catch(e){}
+      location.reload();
+    },
+    lang==='zh'?'确认重置':'Confirm Reset'
+  );
+}
+
+/* ========== CONFIRM DIALOG ========== */
+var confirmCallback = null;
+function showConfirm(title, msg, onConfirm, okText){
+  $('confirm-title').textContent = title;
+  $('confirm-msg').textContent = msg;
+  var okBtn = $('confirm-ok-btn');
+  okBtn.textContent = okText || (lang==='zh'?'确认删除':'Confirm Delete');
+  confirmCallback = onConfirm;
+  $('confirm-modal').classList.add('show');
+}
+function closeConfirm(){
+  $('confirm-modal').classList.remove('show');
+  confirmCallback = null;
+}
+function executeConfirm(){
+  if(confirmCallback) confirmCallback();
+  closeConfirm();
+}
+
+/* ========== RENDER ALL ========== */
+function renderAll(){
+  renderSidebarProjects();
+  renderDashboard();
+  renderBoard();
+  renderList();
+  renderMyIssues();
+  renderInbox();
+  renderTeam();
+}
+
+/* ========== INIT ========== */
+function init(){
+  loadData();
+  buildLookupMaps();
+  applyTranslations();
+  if(!checkAuth()){
+    $('login-screen').style.display = 'flex';
+    $('main-app').style.display = 'none';
+  } else {
+    $('login-screen').style.display = 'none';
+    $('main-app').style.display = 'block';
+    renderAll();
+    navigate('dashboard');
+  }
+  initKeyboardShortcuts();
+  initSearch();
+}
+
+/* ========== WINDOW EXPORTS ========== */
+window.doLogin = doLogin;
+window.doLogout = doLogout;
+window.navigate = navigate;
+window.setLang = setLang;
+window.toggleDropdown = toggleDropdown;
+window.openIssueModal = openIssueModal;
+window.closeIssueModal = closeIssueModal;
+window.saveIssue = saveIssue;
+window.openIssueDetail = openIssueDetail;
+window.closeIssueDetail = closeIssueDetail;
+window.moveIssue = moveIssue;
+window.editCurrentIssue = editCurrentIssue;
+window.deleteCurrentIssue = deleteCurrentIssue;
+window.filterBoardByProject = filterBoardByProject;
+window.filterList = filterList;
+window.openMessage = openMessage;
+window.openProjectModal = openProjectModal;
+window.closeProjectModal = closeProjectModal;
+window.selectProjectColor = selectProjectColor;
+window.saveProject = saveProject;
+window.openSubAccountModal = openSubAccountModal;
+window.closeSubAccountModal = closeSubAccountModal;
+window.saveSubAccount = saveSubAccount;
+window.openComposeModal = openComposeModal;
+window.closeComposeModal = closeComposeModal;
+window.sendMessage = sendMessage;
+window.submitReview = submitReview;
+window.renderAll = renderAll;
+window.clearSearch = clearSearch;
+window.closeConfirm = closeConfirm;
+window.executeConfirm = executeConfirm;
+window.resetData = resetData;
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

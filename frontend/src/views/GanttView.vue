@@ -1,0 +1,1 @@
+<template><div class="space-y-4"><h2 class="text-2xl font-bold text-glow">甘特图</h2><div class="glass-panel p-5"><p class="text-cockpit-muted text-center py-12">甘特图功能开发中，请先在「计划管理」中创建计划和任务</p><p class="text-center"><button @click="$router.push('/plans')" class="px-4 py-2 bg-cockpit-accent rounded-lg text-sm">前往计划管理 →</button></p></div></div></template>

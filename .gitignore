@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+__pycache__/
+*.pyc
+.idea/
+.workbuddy/
+*.pem
+*.db
+*.sqlite
+uploads/
+/var/
+.DS_Store
+Thumbs.db
