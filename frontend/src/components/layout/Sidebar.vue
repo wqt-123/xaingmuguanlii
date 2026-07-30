@@ -2,7 +2,7 @@
   <aside class="w-64 flex-shrink-0 border-r border-cockpit-border/20 flex flex-col h-full"
     style="background: linear-gradient(180deg, rgba(17,24,39,0.95) 0%, rgba(10,14,23,0.98) 100%)">
     <div class="p-5 border-b border-cockpit-border/20">
-      <h1 class="text-xl font-bold text-glow tracking-wider">晴天天 Atlas PM</h1>
+      <h1 class="text-xl font-bold text-glow tracking-wider">深入云境-Nick</h1>
       <p class="text-xs text-cockpit-muted mt-1">项目管理作战驾驶舱</p>
     </div>
     <nav class="flex-1 p-3 space-y-1 overflow-auto">

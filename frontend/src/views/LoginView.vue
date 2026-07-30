@@ -6,7 +6,7 @@
 
     <div class="relative w-full max-w-md mx-4">
       <div class="glass-panel p-8 text-center">
-        <h1 class="text-3xl font-bold text-glow mb-2 tracking-wider">晴天天</h1>
+        <h1 class="text-3xl font-bold text-glow mb-2 tracking-wider">深入云境-Nick</h1>
         <p class="text-cockpit-muted mb-8">Atlas PM — 项目管理作战驾驶舱</p>
 
         <form @submit.prevent="handleLogin" class="space-y-4">
@@ -29,7 +29,6 @@
           </button>
         </form>
 
-        <p class="mt-6 text-xs text-cockpit-muted">默认账号: admin / admin</p>
         <p class="mt-3">
           <button @click="toggleRegister" class="text-xs text-cockpit-gold hover:text-cockpit-accent transition-colors">
             {{ showRegister ? '已有账号？去登录' : '注册新账号' }}
