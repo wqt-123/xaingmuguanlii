@@ -13,6 +13,8 @@ from app.models.review import Review
 from app.models.notification import Notification
 from app.models.audit_log import AuditLog
 from app.models.template import Template
+from app.models.message import Message
+from app.models.user_settings import UserSettings
 
 __all__ = [
     "User", "Project", "ProjectMember",
@@ -20,4 +22,5 @@ __all__ = [
     "Requirement", "RequirementChange",
     "Defect", "DefectAttachment",
     "Review", "Notification", "AuditLog", "Template",
+    "Message", "UserSettings",
 ]

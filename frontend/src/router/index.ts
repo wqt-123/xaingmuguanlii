@@ -64,6 +64,16 @@ const router = createRouter({
           name: 'Inbox',
           component: () => import('@/views/InboxView.vue'),
         },
+        {
+          path: 'mytasks',
+          name: 'MyTasks',
+          component: () => import('@/views/MyTasksView.vue'),
+        },
+        {
+          path: 'settings',
+          name: 'Settings',
+          component: () => import('@/views/SettingsView.vue'),
+        },
       ],
     },
   ],

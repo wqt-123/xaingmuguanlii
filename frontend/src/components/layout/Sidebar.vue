@@ -44,8 +44,10 @@ const navItems = [
   { to: '/gantt', icon: '≣', label: '甘特图' },
   { to: '/requirements', icon: '☰', label: '需求管理' },
   { to: '/defects', icon: '⚠', label: '缺陷管理' },
+  { to: '/mytasks', icon: '📋', label: '我的任务' },
   { to: '/team', icon: '👥', label: '团队管理' },
   { to: '/inbox', icon: '✉', label: '消息中心' },
+  { to: '/settings', icon: '⚙', label: '个人设置' },
 ]
 
 const userInitial = computed(() => (auth.user?.name || 'U')[0].toUpperCase())

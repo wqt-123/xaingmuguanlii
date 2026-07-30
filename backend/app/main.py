@@ -44,6 +44,8 @@ from app.api.dashboard import router as dashboard_router
 from app.api.reviews import router as reviews_router
 from app.api.notifications import router as notifications_router
 from app.api.templates import router as templates_router
+from app.api.messages import router as messages_router
+from app.api.settings import router as settings_router
 
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(users_router, prefix="/users", tags=["Users"])
@@ -56,6 +58,8 @@ app.include_router(dashboard_router, prefix="/dashboard", tags=["Dashboard"])
 app.include_router(reviews_router, prefix="/reviews", tags=["Reviews"])
 app.include_router(notifications_router, prefix="/notifications", tags=["Notifications"])
 app.include_router(templates_router, prefix="/templates", tags=["Templates"])
+app.include_router(messages_router, prefix="/messages", tags=["Messages"])
+app.include_router(settings_router, prefix="/settings", tags=["Settings"])
 
 
 @app.get("/")

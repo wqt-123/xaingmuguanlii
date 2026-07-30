@@ -16,11 +16,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import api from '@/api/client'
 
 const route = useRoute()
 const unreadCount = ref(0)
+onMounted(async()=>{try{const r:any=await api.get('/messages/unread-count');unreadCount.value=r.data?.count||0}catch{}})
 
 const pageNames: Record<string, string> = {
   dashboard: '仪表盘', plans: '计划管理', gantt: '甘特图',
