@@ -30,6 +30,9 @@ class User(Base):
     )
     dept: Mapped[str] = mapped_column(String(64), default="")
     title: Mapped[str] = mapped_column(String(64), default="")
+    gender: Mapped[str] = mapped_column(String(8), default="")
+    age: Mapped[int] = mapped_column(default=0)
+    status: Mapped[str] = mapped_column(String(16), default="active")  # active, pending, rejected
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     # Relationships

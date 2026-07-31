@@ -101,3 +101,28 @@ async def delete_user(
     await db.delete(user)
     await db.flush()
     return success_response(None, "用户已删除")
+
+
+@router.get("/pending/list")
+async def list_pending(db: AsyncSession = Depends(get_db), current_user: User = Depends(require_admin)):
+    result = await db.execute(select(User).where(User.status == "pending").order_by(User.created_at.desc()))
+    users = result.scalars().all()
+    return success_response([UserOut.model_validate(u).model_dump() for u in users])
+
+
+@router.put("/{user_id}/approve")
+async def approve_user(user_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(require_admin)):
+    user = await db.get(User, user_id)
+    if not user: return error_response(404, "用户不存在")
+    user.status = "active"
+    await db.flush()
+    return success_response(None, "用户已审核通过")
+
+
+@router.put("/{user_id}/reject")
+async def reject_user(user_id: int, db: AsyncSession = Depends(get_db), current_user: User = Depends(require_admin)):
+    user = await db.get(User, user_id)
+    if not user: return error_response(404, "用户不存在")
+    user.status = "rejected"
+    await db.flush()
+    return success_response(None, "用户已拒绝")

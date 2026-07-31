@@ -151,3 +151,19 @@
   from { opacity: 0; transform: translateY(6px) scale(0.9); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* Button click animation: scale 1.2x + glow */
+.btn-click {
+  transition: all 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+.btn-click:active {
+  transform: scale(1.2) !important;
+  filter: brightness(1.3);
+  box-shadow: 0 0 20px rgba(255,179,71,0.4), 0 0 40px rgba(255,77,46,0.2) !important;
+}
+.btn-click:disabled {
+  transform: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}

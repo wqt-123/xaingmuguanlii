@@ -32,6 +32,9 @@ class UserUpdate(BaseModel):
 class UserOut(UserBase):
     id: int
     avatar: str = ""
+    gender: str = ""
+    age: int = 0
+    status: str = "active"
     created_at: Optional[datetime] = None
 
     class Config:
